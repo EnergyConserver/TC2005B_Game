@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="stylesheet.css">
+        <script src="scripts.js" defer></script>
+    </head>
+    <body class="fondos inicio">
+        <button class="button-return" onclick="irPaginaInicio()">
+            <div class="button-return-box">
+                <span class="button-return-elem">
+                    <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z" fill="currentColor"
+                        ></path>
+                    </svg>
+                </span>
+                <span class="button-return-elem">
+                    <svg viewBox="0 0 46 40">
+                        <path
+                        d="M46 20.038c0-.7-.3-1.5-.8-2.1l-16-17c-1.1-1-3.2-1.4-4.4-.3-1.2 1.1-1.2 3.3 0 4.4l11.3 11.9H3c-1.7 0-3 1.3-3 3s1.3 3 3 3h33.1l-11.3 11.9c-1 1-1.2 3.3 0 4.4 1.2 1.1 3.3.8 4.4-.3l16-17c.5-.5.8-1.1.8-1.9z" fill="currentColor"
+                        ></path>
+                    </svg>
+                </span>
+            </div>
+        </button>
+        <form class="form" id="registerForm">
+            <p class="form-title">Crea tu cuenta</p>
+            <div class="input-container">
+                <input name="email" placeholder="Correo" type="email" required>
+            </div>
+            <div class="input-container">
+                <input name="password" placeholder="Contraseña" type="password" required>
+            </div>
+            <button class="submit" type="submit">
+                Registrarse
+            </button>
+            <p class="signup-link">
+                ¿Ya tienes una cuenta?
+                <a href="/login">Haz click aquí</a>
+            </p>
+        </form>
+        <div class="mensajeServerDiv">
+            <p id="mensajeServer" class="mensajeServer"></p>
+        </div>
+    </body>
+</html>
