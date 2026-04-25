@@ -78,7 +78,7 @@ app.post("/login", async (req, res) => {
         conn = await pool.getConnection();
 
         const rows = await conn.query(
-            "SELECT * FROM usuarios WHERE email = ?",
+            "SELECT * FROM usuarios WHERE correo = ?",
             [email]
         );
 
@@ -91,11 +91,11 @@ app.post("/login", async (req, res) => {
             });
         }
         
-        const match = await bcrypt.compare(password, user.password);
+        const match = await bcrypt.compare(password, user.contraseña);
 
         if (match) {
             const token = jwt.sign(
-                {id: user.id, email: user.email, rol: user.rol},
+                {id: user.id, email: user.correo, rol: user.tipo_usuario},
                 SECRET,
                 { expiresIn: '1hr' }
             );
@@ -130,7 +130,7 @@ app.post("/register", async (req, res) => {
         conn = await pool.getConnection();
 
         const existing = await conn.query(
-            "SELECT * FROM usuarios WHERE email = ?",
+            "SELECT * FROM usuarios WHERE correo = ?",
             [email]
         );
 
@@ -144,7 +144,7 @@ app.post("/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await conn.query(
-            "INSERT INTO usuarios (email, password, rol) VALUES (?, ?, 'alumno')",
+            "INSERT INTO usuarios (correo, contraseña, tipo_usuario) VALUES (?, ?, 'alumno')",
             [email, hashedPassword]
         );
 
@@ -165,6 +165,48 @@ app.post("/register", async (req, res) => {
         res.json({
             status: "error",
             message: "Error al registrar"
+        });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.post("/admin/crear-profesor", verifyToken, verifyRole("admin"), async (req, res) => {
+    const { email, password } = req.body;
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const existing = await conn.query(
+            "SELECT * FROM usuarios WHERE correo = ?",
+            [email]
+        );
+
+        if (existing.length > 0) {
+            return res.json({
+                status: "error",
+                message: "El usuario ya existe"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await conn.query(
+            "INSERT INTO usuarios (correo, contraseña, tipo_usuario) VALUES (?, ?, 'profesor')",
+            [email, hashedPassword]
+        );
+
+        res.json({
+            status: "success",
+            message: "Profesor creado"
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.json({
+            status: "error",
+            message: "Error del servidor"
         });
     } finally {
         if (conn) conn.release();
@@ -251,6 +293,10 @@ app.get("/juego", (req, res) => {
 
 app.get("/dashboard",(req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/dashboard.html"));
+});
+
+app.get("/admin",(req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/admin.html"));
 });
 
 const PORT = process.env.PORT || 3000;

@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("token");
     const path = window.location.pathname;
 
-    const rutasProtegidas = ["/home", "/perfil", "/mundos", "/niveles", "/juego", "/dashboard"]
+    const rutasProtegidas = ["/home", "/perfil", "/mundos", "/niveles", "/juego", "/dashboard", "/admin"]
     const esRutaProtegida = rutasProtegidas.some(ruta => path.startsWith(ruta))
 
     if (esRutaProtegida) {
@@ -22,6 +22,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (path.startsWith("/dashboard")) {
             const payload = JSON.parse(atob(token.split(".")[1]));
             if (payload.rol !== "profesor") {
+                window.location.href = "/home";
+                return;
+            }
+        }
+
+        if (path.startsWith("/admin")) {
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            if (payload.rol !== "admin") {
                 window.location.href = "/home";
                 return;
             }
@@ -61,6 +69,8 @@ if (loginForm) {
                 setTimeout(() => {
                     if (payload.rol === "profesor") {
                         window.location.href = "/dashboard"
+                    } else if (payload.rol === "admin") {
+                        window.location.href = "/admin";
                     } else {
                         window.location.href = "/home";
                     }
@@ -223,6 +233,45 @@ if(canvas) {
     });
 }
 
+const crearProfesorForm = document.getElementById("crearProfesorForm");
+
+if (crearProfesorForm) {
+    crearProfesorForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = e.target.email.value;
+        const password = e.target.password.value;
+        const mensaje = document.getElementById("mensajeAdmin");
+
+        const token = localStorage.getItem("token");
+
+        try {
+            const res = await fetch("http://localhost:3000/admin/crear-profesor", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (data.status === "success") {
+                mensaje.style.color = "green";
+                mensaje.innerText = "Profesor creado correctamente";
+                e.target.reset();
+            } else {
+                mensaje.style.color = "red";
+                mensaje.innerText = data.message;
+            }
+
+        } catch (err) {
+            mensaje.innerText = "Error del servidor";
+        }
+    });
+}
+
 async function verificarAcceso(token) {
     try {
         const res = await fetch("http://localhost:3000/verification", {
@@ -271,6 +320,8 @@ function irInicioSesion() {
         const payload = JSON.parse(atob(token.split(".")[1]));
         if (payload.rol === "profesor") {
             window.location.href = "/dashboard";
+        } else if (payload.rol === "admin") {
+            window.location.href = "/admin";
         } else {
             window.location.href = "/home";
         }

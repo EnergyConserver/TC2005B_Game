@@ -16,6 +16,10 @@
   background-image: url(images/inicio_notitle.jpeg);
 }
 
+.homeFondo {
+  background-image: url(images/homeFondo.jpeg);
+}
+
 .container_login {
   display: flex;
   flex-direction: column;
