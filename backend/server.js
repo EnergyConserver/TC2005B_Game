@@ -95,7 +95,7 @@ app.post("/login", async (req, res) => {
 
         if (match) {
             const token = jwt.sign(
-                {id: user.id, email: user.correo, rol: user.tipo_usuario},
+                {id: user.id_usuario, email: user.correo, rol: user.tipo_usuario},
                 SECRET,
                 { expiresIn: '1hr' }
             );
@@ -214,7 +214,7 @@ app.post("/admin/crear-profesor", verifyToken, verifyRole("admin"), async (req, 
 });
 
 app.post("/api/jugar", verifyToken, async (req, res) => {
-    const { x, y, nivel } = req.body;
+    const { x, y, mundo, nivel } = req.body;
 
     if (!Number.isInteger(x) || !Number.isInteger(y)) {
         return res.status(400).json({
@@ -227,9 +227,14 @@ app.post("/api/jugar", verifyToken, async (req, res) => {
     try {
         conn = await pool.getConnection();
 
-        const rows = await conn.query(
-            "SELECT meta_x, meta_y FROM niveles WHERE id = ?",
-            [nivel]
+        const rows = await conn.query(`
+            SELECT 
+                ST_X(coordenada_meta) AS meta_x,
+                ST_Y(coordenada_meta) AS meta_y
+            FROM niveles n
+            JOIN mundos m ON n.id_mundo = m.id_mundo
+            WHERE m.orden = ? AND n.orden_nivel = ?
+        `, [mundo, nivel]
         );
 
         if (rows.length === 0) {
@@ -243,6 +248,23 @@ app.post("/api/jugar", verifyToken, async (req, res) => {
 
         const acierto = (x === meta.meta_x && y === meta.meta_y);
 
+        if (acierto) {
+            const nivelRow = await conn.query(`
+            SELECT n.id_nivel
+            FROM niveles n
+            JOIN mundos m ON n.id_mundo = m.id_mundo
+            WHERE m.orden = ? AND n.orden_nivel = ?
+            `, [mundo, nivel]);
+
+            const idNivel = nivelRow[0].id_nivel;
+
+            await conn.query(`
+                INSERT INTO progreso_usuario (id_usuario, id_nivel, completado, intentos)
+                VALUES (?, ?, 1, 1)
+                ON DUPLICATE KEY UPDATE completado = 1
+            `, [req.user.id, idNivel]);
+        }
+
         res.json({
             status: "success",
             resultado: acierto ? "acierto" : "fallo"
@@ -254,6 +276,126 @@ app.post("/api/jugar", verifyToken, async (req, res) => {
             status: "error",
             message: "Error del servidor"
         });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.get("/api/nivel", verifyToken, async (req, res) => {
+    const mundoNum = Number(req.query.mundo);
+    const nivelNum = Number(req.query.nivel);
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        if (nivelNum > 1) {
+            const nivelPrevio = await conn.query(`
+                SELECT n.id_nivel
+                FROM niveles n
+                JOIN mundos m ON n.id_mundo = m.id_mundo
+                WHERE m.orden = ? AND n.orden_nivel = ?
+            `, [mundoNum, nivelNum - 1]);
+
+            if (nivelPrevio.length > 0) {
+                const progreso = await conn.query(`
+                    SELECT completado
+                    FROM progreso_usuario
+                    WHERE id_usuario = ? AND id_nivel = ?
+                `, [req.user.id, nivelPrevio[0].id_nivel]);
+
+                if (!progreso.length || progreso[0].completado !== 1) {
+                    return res.status(403).json({
+                        status: "error",
+                        message: "Debes completar el nivel anterior"
+                    });
+                }
+            }
+        }
+
+        if (nivelNum === 1 && mundoNum > 1) {
+            const mundoAnterior = mundoNum - 1;
+
+            const totalAnterior = await conn.query(`
+                SELECT COUNT(*) AS total
+                FROM niveles n
+                JOIN mundos m ON n.id_mundo = m.id_mundo
+                WHERE m.orden = ?
+            `, [mundoAnterior]);
+
+            const completadosAnterior = await conn.query(`
+                SELECT COUNT(*) AS total
+                FROM progreso_usuario pu
+                JOIN niveles n ON pu.id_nivel = n.id_nivel
+                JOIN mundos m ON n.id_mundo = m.id_mundo
+                WHERE pu.id_usuario = ?
+                AND pu.completado = 1
+                AND m.orden = ?
+            `, [req.user.id, mundoAnterior]);
+
+            if (completadosAnterior[0].total < totalAnterior[0].total) {
+                return res.status(403).json({
+                    status: "error",
+                    message: "Debes completar el mundo anterior"
+                });
+            }
+        }
+
+        const rows = await conn.query(`
+            SELECT 
+                ST_X(n.coordenada_inicio) AS inicio_x,
+                ST_Y(n.coordenada_inicio) AS inicio_y,
+                ST_X(n.coordenada_meta) AS meta_x,
+                ST_Y(n.coordenada_meta) AS meta_y,
+                n.movimientos_max,
+                n.pregunta,
+                n.hint
+            FROM niveles n
+            JOIN mundos m ON n.id_mundo = m.id_mundo
+            WHERE m.orden = ? AND n.orden_nivel = ?
+        `, [mundoNum, nivelNum]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                status: "error",
+                message: "Nivel no encontrado"
+            });
+        }
+
+        res.json({
+            status: "success",
+            nivel: rows[0]
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: "error",
+            message: "Error del servidor"
+        });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.get("/api/siguiente-nivel", verifyToken, async (req, res) => {
+    const { mundo, nivel } = req.query;
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const rows = await conn.query(`
+            SELECT 1
+            FROM niveles n
+            JOIN mundos m ON n.id_mundo = m.id_mundo
+            WHERE m.orden = ? AND n.orden_nivel = ?
+        `, [mundo, Number(nivel) + 1]);
+
+        res.json({
+            existe: rows.length > 0
+        });
+
     } finally {
         if (conn) conn.release();
     }

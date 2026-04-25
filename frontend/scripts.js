@@ -132,6 +132,12 @@ if(canvas) {
     const size = 700;
     const range = 10; // de -10 a 10
     const step = size / (range * 2); // tamaño de cada celda
+    const mundo = localStorage.getItem("mundoSeleccionado");
+    const nivel = localStorage.getItem("nivelSeleccionado");
+    const token = localStorage.getItem("token");
+
+    let puntoCorrecto;
+    let puntos = [];
 
     // Dibujar grid
     function drawGrid() {
@@ -156,32 +162,11 @@ if(canvas) {
         }
     }
 
-    drawGrid();
-
-    // Temporal (luego vendrá del backend)
-    const puntoCorrecto = { x: 3, y: -2 };
-    const puntos = [];
-
-    function randomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    while (puntos.length < 2) {
-        let p = {
-            x: randomInt(-10, 10),
-            y: randomInt(-10, 10)
-        };
-        if ((p.x !== puntoCorrecto.x || p.y !== puntoCorrecto.y) && !puntos.some(pt => pt.x === p.x && pt.y === p.y)) {
-            puntos.push(p);
-        }
-    }
-
-    puntos.push(puntoCorrecto);
-
     function drawPoints() {
         puntos.forEach(p => {
             const px = size / 2 + p.x * step;
             const py = size / 2 - p.y * step;
+
             ctx.beginPath();
             ctx.arc(px, py, 6, 0, 2 * Math.PI);
             ctx.fillStyle = "red";
@@ -189,9 +174,71 @@ if(canvas) {
         });
     }
 
-    drawPoints();
+    function generarPuntos() {
+        puntos = [];
 
-    canvas.addEventListener("click", (e) => {
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        while (puntos.length < 2) {
+            let p = {
+                x: randomInt(-9, 9),
+                y: randomInt(-9, 9)
+            };
+
+            if ((p.x !== puntoCorrecto.x || p.y !== puntoCorrecto.y) && !puntos.some(pt => pt.x === p.x && pt.y === p.y)) {
+                puntos.push(p);
+            }
+        }
+        puntos.push(puntoCorrecto);
+    }
+
+    async function cargarNivel() {
+        const res = await fetch(`http://localhost:3000/api/nivel?mundo=${mundo}&nivel=${nivel}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message);
+            window.location.href = "/niveles";
+            return;
+        }
+
+        if (data.status === "success") {
+            puntoCorrecto = {
+                x: data.nivel.meta_x,
+                y: data.nivel.meta_y
+            };
+
+            const preguntaElem = document.getElementById("pregunta");
+            const hintElem = document.getElementById("hint");
+            const btn = document.getElementById("btnHint");
+
+            if (preguntaElem) {
+                preguntaElem.innerText = data.nivel.pregunta;
+            }
+
+            if (hintElem) {
+                hintElem.innerText = data.nivel.hint;
+            }
+
+            if (hintElem && btn) {
+                hintElem.style.display = "none";
+                btn.innerText = "Mostrar pista";
+            }
+
+            generarPuntos();
+            drawGrid();
+            drawPoints();
+        }
+    }
+
+    canvas.addEventListener("click", async (e) => {
         const rect = canvas.getBoundingClientRect();
 
         const xPixel = e.clientX - rect.left;
@@ -210,9 +257,7 @@ if(canvas) {
         const clicked = puntos.find(p => p.x === x && p.y === y);
         if (!clicked) return;
 
-        const token = localStorage.getItem("token");
-
-        fetch("http://localhost:3000/api/jugar", {
+        const res = await fetch("http://localhost:3000/api/jugar", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -221,16 +266,35 @@ if(canvas) {
             body: JSON.stringify({
                 x,
                 y,
-                nivel: 1 // Cambiar después para cuando haya más
+                mundo: Number(mundo),
+                nivel: Number(nivel)
             })
-        }).then(res => res.json()).then(data => {
-            if (data.resultado === "acierto") {
-                alert("¡Le diste!");
+        });
+
+        const data = await res.json();
+
+        if (data.resultado === "acierto") {
+            const res = await fetch(`http://localhost:3000/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+
+            const dataNext = await res.json();
+            const btn = document.getElementById("btnNext");
+
+            if (dataNext.existe) {
+                btn.style.display = "block";
+                btn.textContent = "Siguiente nivel ➜";
             } else {
-                alert("Intenta otra vez");
+                btn.style.display = "block";
+                btn.textContent = "🏁 Terminar mundo";
+                btn.onclick = () => window.location.href = "/mundos";
             }
-        }).catch(err => console.error(err));
+        } else {
+            alert("Intenta otra vez");
+        }
     });
+
+    cargarNivel();
 }
 
 const crearProfesorForm = document.getElementById("crearProfesorForm");
@@ -346,12 +410,85 @@ function irAventura() {
     window.location.href = "/mundos"
 }
 
-function irNiveles() {
+async function puedeAccederAMundo(mundo) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`http://localhost:3000/api/nivel?mundo=${mundo}&nivel=1`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    return res.ok;
+}
+
+async function seleccionarMundo(mundo) {
+    const permitido = await puedeAccederAMundo(mundo);
+
+    if (!permitido) {
+        alert("Debes completar el mundo anterior");
+        return;
+    }
+    
+    localStorage.setItem("mundoSeleccionado", mundo);
     window.location.href = "/niveles"
 }
 
-function irJuego() {
+async function seleccionarNivel(nivel) {
+    const mundo = localStorage.getItem("mundoSeleccionado");
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`http://localhost:3000/api/nivel?mundo=${mundo}&nivel=${nivel}`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) {
+        const data = await res.json();
+        alert(data.message);
+        return;
+    }
+    
+    localStorage.setItem("nivelSeleccionado", nivel);
     window.location.href = "/juego"
+}
+
+function mostrarHint() {
+    const hintElem = document.getElementById("hint");
+    const btn = document.getElementById("btnHint");
+
+    if (!hintElem || !btn) return;
+
+    if (hintElem.style.display === "none") {
+        hintElem.style.display = "block";
+        btn.innerText = "Ocultar pista";
+    } else {
+        hintElem.style.display = "none";
+        btn.innerText = "Mostrar pista";
+    }
+}
+
+async function irSiguienteNivel() {
+    let mundo = Number(localStorage.getItem("mundoSeleccionado"));
+    let nivel = Number(localStorage.getItem("nivelSeleccionado"));
+
+    const res = await fetch(`http://localhost:3000/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+    });
+
+    const data = await res.json();
+
+    if (data.existe) {
+        nivel++;
+        localStorage.setItem("nivelSeleccionado", nivel);
+        window.location.href = "/juego";
+    } else {
+        alert("Terminaste el mundo!");
+        window.location.href = "/mundos";
+    }
 }
 
 function regresarHome() {
