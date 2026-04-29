@@ -239,3 +239,51 @@
   align-content: stretch;
   gap: 8px;
 }
+
+.tooltip {
+  position: absolute;
+  display: inline-block;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  width: 180px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px;
+  border-radius: 6px;
+
+  position: absolute;
+  top: 125%; /* 👈 en lugar de bottom */
+  left: 50%;
+  transform: translateX(-50%);
+
+  transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.button_aventura-container {
+  top: 30%;
+  left: 15%;
+}
+
+.button_tienda-container {
+  top: 90%;
+  right: 15%;
+}
+
+.button_repaso-container {
+  top: 30%;
+  right: 25%;
+}
+
+.button_perfil-container {
+  top: 90%;
+  left: 50%;
+}

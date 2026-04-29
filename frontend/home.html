@@ -9,10 +9,22 @@
         <div class="divButones">
             <h2 id="bienvenidaUsuario"></h2>
             
-            <button class="button_aventura" onclick="irAventura()">Aventura</button>
-            <button class="button_tienda">Tienda</button>
-            <button class="button_repaso">Repaso</button>
-            <button class="button_perfil" onclick="irPerfil()">Perfil</button>
+            <div class="tooltip button_aventura-container">
+                <button class="button_aventura" onclick="irAventura()"></button>
+                <span class="tooltip-text">¡Juega y aprende con una aventura!</span>
+            </div>
+            <div class="tooltip button_tienda-container">
+                <button class="button_tienda"></button>
+                <span class="tooltip-text">Compra objetos y personaliza tu pato</span>
+            </div>
+            <div class="tooltip button_repaso-container">
+                <button class="button_repaso"></button>
+                <span class="tooltip-text">¡Repasa temas o aborda desafios!</span>
+            </div>
+            <div class="tooltip button_perfil-container">
+                <button class="button_perfil" onclick="irPerfil()"></button>
+                <span class="tooltip-text">Ajuste de cuenta</span>
+            </div>
         </div>
     </body>
 </html>
