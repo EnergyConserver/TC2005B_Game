@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("token");
     const path = window.location.pathname;
 
-    const rutasProtegidas = ["/home", "/perfil", "/mundos", "/niveles", "/juego", "/dashboard", "/admin"]
+    const rutasProtegidas = ["/home", "/perfil", "/mundos", "/niveles", "/juego", "/tienda", "/dashboard", "/admin"]
     const esRutaProtegida = rutasProtegidas.some(ruta => path.startsWith(ruta))
 
     if (esRutaProtegida) {
@@ -33,6 +33,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 window.location.href = "/home";
                 return;
             }
+        }
+
+        if (path === "/home") {
+            cargarMonedas();
         }
     }
     document.body.style.display = "block";
@@ -406,6 +410,10 @@ function irPerfil() {
     window.location.href = "/perfil"
 }
 
+function irTienda() {
+    window.location.href = "/tienda"
+}
+
 function irAventura() {
     window.location.href = "/mundos"
 }
@@ -489,6 +497,129 @@ async function irSiguienteNivel() {
         alert("Terminaste el mundo!");
         window.location.href = "/mundos";
     }
+}
+
+async function cargarTienda() {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:3000/api/tienda", {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    const data = await res.json();
+    const container = document.getElementById("cosmeticos");
+
+    container.innerHTML = "";
+
+    data.cosmeticos.forEach(c => {
+        const div = document.createElement("div");
+
+        div.innerHTML = `
+            <img src="/cosmeticos/${c.imagen}" class="item-img">
+            <p>${c.nombre}</p>
+            <p>${c.tipo_cosmetico} - 💰 ${c.precio}</p>
+            <button>${!c.comprado ? "Comprar" : c.activo ? "Quitar" : "Equipar"}</button>
+        `;
+
+        const btn = div.querySelector("button");
+
+        btn.onclick = async () => {
+            if (c.activo) {
+                await fetch("http://localhost:3000/api/quitar", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id_cosmetico: c.id_cosmetico })
+                });
+            } else if (c.comprado) {
+                await fetch("http://localhost:3000/api/equipar", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id_cosmetico: c.id_cosmetico })
+                });
+            } else {
+                await fetch("http://localhost:3000/api/comprar", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id_cosmetico: c.id_cosmetico })
+                });
+            }
+
+            cargarTienda();
+            cargarAvatar();
+        };
+
+        container.appendChild(div);
+    });
+}
+
+async function cargarAvatar() {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:3000/api/avatar", {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    const data = await res.json();
+
+    const capas = {
+        cabeza: null,
+        cuerpo: null,
+        pies: null,
+        accesorio: null
+    };
+
+    data.avatar.forEach(c => {
+        capas[c.tipo_cosmetico] = c.imagen;
+    });
+
+    const container = document.getElementById("avatar");
+
+    container.innerHTML = `
+        <img src="/cosmeticos/base_pato.png" class="layer">
+        ${capas.cuerpo ? `<img src="/cosmeticos/${capas.cuerpo}" class="layer cuerpo">` : ""}
+        ${capas.pies ? `<img src="/cosmeticos/${capas.pies}" class="layer pies">` : ""}
+        ${capas.cabeza ? `<img src="/cosmeticos/${capas.cabeza}" class="layer cabeza">` : ""}
+        ${capas.accesorio ? `<img src="/cosmeticos/${capas.accesorio}" class="layer accesorio">` : ""}
+    `;
+}
+
+async function cargarMonedas() {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:3000/api/monedas", {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    const data = await res.json();
+
+    const h2 = document.getElementById("monedas");
+    if (h2) {
+        h2.innerText = `${data.monedas}`;
+    }
+}
+
+if (window.location.pathname === "/tienda") {
+    cargarTienda();
+    cargarAvatar();
+}
+
+if (window.location.pathname === "/home") {
+    cargarAvatar();
 }
 
 function regresarHome() {

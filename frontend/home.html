@@ -8,13 +8,14 @@
     <body style="display: none;" class="fondos homeFondo">
         <div class="divButones">
             <h2 id="bienvenidaUsuario"></h2>
+            <h2 id="monedas"></h2>
             
             <div class="tooltip button_aventura-container">
                 <button class="button_aventura" onclick="irAventura()"></button>
                 <span class="tooltip-text">¡Juega y aprende con una aventura!</span>
             </div>
             <div class="tooltip button_tienda-container">
-                <button class="button_tienda"></button>
+                <button class="button_tienda" onclick="irTienda()"></button>
                 <span class="tooltip-text">Compra objetos y personaliza tu pato</span>
             </div>
             <div class="tooltip button_repaso-container">
@@ -22,7 +23,8 @@
                 <span class="tooltip-text">¡Repasa temas o aborda desafios!</span>
             </div>
             <div class="tooltip button_perfil-container">
-                <button class="button_perfil" onclick="irPerfil()"></button>
+                <button id="avatar" class="button_perfil avatar-btn" onclick="irPerfil()">
+                </button>
                 <span class="tooltip-text">Ajuste de cuenta</span>
             </div>
         </div>

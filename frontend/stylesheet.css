@@ -256,7 +256,7 @@
   border-radius: 6px;
 
   position: absolute;
-  top: 125%; /* 👈 en lugar de bottom */
+  top: 125%;
   left: 50%;
   transform: translateX(-50%);
 
@@ -284,6 +284,107 @@
 }
 
 .button_perfil-container {
-  top: 90%;
+  top: 60%;
+  left: 40%;
+}
+
+.button_perfil-container .tooltip-text {
+  top: 100%;
   left: 50%;
+}
+
+.containerTienda {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.item-img {
+  width: 500px;
+  height: auto;
+}
+
+#avatar {
+  position: relative;
+  flex: 2.5;
+  width: 325px;
+  height: 325px;
+  transform: scale(1.5);
+  pointer-events: none;
+}
+
+.homeFondo #avatar {
+  width: 375px;
+  height: 200px;
+  pointer-events: auto;
+  transition: transform 0.2s ease;
+}
+
+.homeFondo #avatar:hover {
+  transform: scale(1.9);
+}
+
+#cosmeticos {
+  flex: 5;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* ropa */
+.layer.cuerpo {
+  top: -2px;
+  left: 0px;
+}
+
+/* cabeza */
+.layer.cabeza {
+  top: -55px;
+  left: -5px;
+}
+
+.homeFondo .layer.cabeza {
+  top: -35px;
+  left: -2px;
+}
+
+/* accesorios */
+.layer.accesorio {
+  top: -12px;
+  left: 2px;
+}
+
+.layer.pies {
+  top: 58px;
+  left: 5px;
+}
+
+.homeFondo .layer.pies {
+  top: 35px;
+  left: 4px;
+}
+
+.avatar-btn {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.avatar-btn.layer {
+    position: absolute;
+    object-fit: contain;
 }
