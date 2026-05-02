@@ -181,8 +181,17 @@ if(canvas) {
         });
     }
 
+    function obtenerCuadrante(x, y) {
+        if (x > 0 && y > 0) return 1;
+        if (x < 0 && y > 0) return 2;
+        if (x < 0 && y < 0) return 3;
+        if (x > 0 && y < 0) return 4;
+        return 0; // ejes
+    }
+
     function generarPuntos() {
         puntos = [];
+        const cuadranteCorrecto = obtenerCuadrante(puntoCorrecto.x, puntoCorrecto.y);
 
         function randomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -194,7 +203,12 @@ if(canvas) {
                 y: randomInt(-9, 9)
             };
 
-            if ((p.x !== puntoCorrecto.x || p.y !== puntoCorrecto.y) && !puntos.some(pt => pt.x === p.x && pt.y === p.y)) {
+            const cuadranteP = obtenerCuadrante(p.x, p.y);
+            const esCorrecto = p.x === puntoCorrecto.x && p.y === puntoCorrecto.y;
+            const mismoCuadrante = cuadranteP === cuadranteCorrecto;
+            const yaExiste = puntos.some(pt => pt.x === p.x && pt.y === p.y);
+
+            if (!esCorrecto && !mismoCuadrante && !yaExiste) {
                 puntos.push(p);
             }
         }
