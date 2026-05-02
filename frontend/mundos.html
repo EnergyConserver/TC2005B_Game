@@ -5,10 +5,16 @@
         <link rel="stylesheet" href="stylesheet.css">
         <script src="scripts.js" defer></script>
     </head>
-    <body style="display: none;">
+    <body style="display: none;" class="fondos islasFondo">
         <h1>Mundos</h1>
         <button onclick="regresarHome()">Volver a inicio</button>
-        <button onclick="seleccionarMundo(1)">Mundo 1</button>
-        <button onclick="seleccionarMundo(2)">Mundo 2</button>
+        <div class="tooltip isla button_isla1">
+            <button class="isla-btn" onclick="seleccionarMundo(1)"></button>
+            <span class="tooltip-text">Isla 1: Isla Coordenada</span>
+        </div>
+        <div class="tooltip isla button_isla2">
+            <button class="isla-btn" onclick="seleccionarMundo(2)"></button>
+            <span class="tooltip-text">Isla 2: Isla Flujo</span>
+        </div>
     </body>
 </html>

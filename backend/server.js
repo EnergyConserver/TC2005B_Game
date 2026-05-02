@@ -214,7 +214,7 @@ app.post("/admin/crear-profesor", verifyToken, verifyRole("admin"), async (req, 
 });
 
 app.post("/api/jugar", verifyToken, async (req, res) => {
-    const { x, y, mundo, nivel } = req.body;
+    const { x, y, mundo, nivel, intentos, usoHint } = req.body;
 
     if (!Number.isInteger(x) || !Number.isInteger(y)) {
         return res.status(400).json({
@@ -279,10 +279,14 @@ app.post("/api/jugar", verifyToken, async (req, res) => {
             }
 
             await conn.query(`
-                INSERT INTO progreso_usuario (id_usuario, id_nivel, completado, intentos)
-                VALUES (?, ?, 1, 1)
-                ON DUPLICATE KEY UPDATE completado = 1
-            `, [req.user.id, idNivel]);
+                INSERT INTO progreso_usuario
+                (id_usuario, id_nivel, completado, intentos, uso_explicacion)
+                VALUES (?, ?, 1, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                completado = 1,
+                intentos = LEAST(intentos, VALUES(intentos)),
+                uso_explicacion = uso_explicacion OR VALUES(uso_explicacion)
+            `, [req.user.id, idNivel, intentos, usoHint ? 1 : 0]);
         }
 
         res.json({

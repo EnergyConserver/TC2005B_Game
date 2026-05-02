@@ -131,6 +131,7 @@ if (registerForm) {
 }
 
 const canvas = document.getElementById("canvas_grid");
+let usoHint = false;
 if(canvas) {
     const ctx = canvas.getContext("2d");
     const size = 700;
@@ -142,6 +143,8 @@ if(canvas) {
 
     let puntoCorrecto;
     let puntos = [];
+    let fallos = 0;
+    let intentos = 0;
 
     // Dibujar grid
     function drawGrid() {
@@ -199,6 +202,8 @@ if(canvas) {
     }
 
     async function cargarNivel() {
+        fallos = 0;
+
         const res = await fetch(`http://localhost:3000/api/nivel?mundo=${mundo}&nivel=${nivel}`, {
             headers: {
                 "Authorization": `Bearer ${token}`
@@ -233,6 +238,7 @@ if(canvas) {
 
             if (hintElem && btn) {
                 hintElem.style.display = "none";
+                btn.style.display = "none";
                 btn.innerText = "Mostrar pista";
             }
 
@@ -261,6 +267,8 @@ if(canvas) {
         const clicked = puntos.find(p => p.x === x && p.y === y);
         if (!clicked) return;
 
+        intentos++;
+
         const res = await fetch("http://localhost:3000/api/jugar", {
             method: "POST",
             headers: {
@@ -271,13 +279,17 @@ if(canvas) {
                 x,
                 y,
                 mundo: Number(mundo),
-                nivel: Number(nivel)
+                nivel: Number(nivel),
+                intentos,
+                usoHint
             })
         });
 
         const data = await res.json();
 
         if (data.resultado === "acierto") {
+            alert("¡Correcto! 🎉");
+            
             const res = await fetch(`http://localhost:3000/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
@@ -294,7 +306,14 @@ if(canvas) {
                 btn.onclick = () => window.location.href = "/mundos";
             }
         } else {
+            fallos++;
+
             alert("Intenta otra vez");
+
+            const btnHint = document.getElementById("btnHint");
+            if (fallos >= 1 && btnHint) {
+                btnHint.style.display = "block";
+            }
         }
     });
 
@@ -468,6 +487,8 @@ function mostrarHint() {
 
     if (!hintElem || !btn) return;
 
+    usoHint = true;
+
     if (hintElem.style.display === "none") {
         hintElem.style.display = "block";
         btn.innerText = "Ocultar pista";
@@ -550,7 +571,7 @@ function renderTienda() {
         div.innerHTML = `
             <img src="/cosmeticos/${c.imagen}" class="item-img">
             <p>${c.nombre}</p>
-            <p>${c.tipo_cosmetico} - 💰 ${c.precio}</p>
+            <p>💰 ${c.precio}</p>
             <button>${!c.comprado ? "Comprar" : c.activo ? "Quitar" : "Equipar"}</button>
         `;
 
