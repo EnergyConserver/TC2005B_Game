@@ -294,7 +294,12 @@
 }
 
 .button_perfil-container .tooltip-text {
-  top: 95%;
+  top: 80%;
+  left: 50%;
+}
+
+.button_aventura-container .tooltip-text {
+  top: 160%;
   left: 50%;
 }
 
@@ -369,7 +374,6 @@
 .divButones .layer {
   top: 15%;
   left: 33%;
-  transform: scale(1.5);
 }
 
 .avatar-btn {
@@ -385,4 +389,34 @@
 .avatar-btn.layer {
     position: absolute;
     object-fit: contain;
+}
+
+.button_aventura,
+.button_tienda,
+.button_repaso {
+  width: 100px;
+  height: 100px;
+  border: none;
+  background-color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+}
+
+.button_aventura-container,
+.button_tienda-container,
+.button_repaso-container {
+  transition: transform 0.2s ease; 
+}
+
+.button_aventura-container:hover,
+.button_tienda-container:hover,
+.button_repaso-container:hover {
+  transform: scale(1.2);
+}
+
+.button_aventura {
+  background-image: url("cosmeticos/barco_aventura.png");
+  transform: scale(2);
 }

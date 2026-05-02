@@ -499,6 +499,11 @@ async function irSiguienteNivel() {
     }
 }
 
+let cosmeticosGlobal = [];
+let filtroActual = "todos";
+let paginaActual = 1;
+const ITEMS_POR_PAGINA = 6;
+
 async function cargarTienda() {
     const token = localStorage.getItem("token");
 
@@ -509,11 +514,37 @@ async function cargarTienda() {
     });
 
     const data = await res.json();
-    const container = document.getElementById("cosmeticos");
+    cosmeticosGlobal = data.cosmeticos;
 
+    const filtroGuardado = localStorage.getItem("filtroTienda");
+    if (filtroGuardado) {
+        filtroActual = filtroGuardado;
+    }
+
+    renderTienda();
+}
+
+function cambiarFiltro(tipo) {
+    filtroActual = tipo;
+    paginaActual = 1;
+    localStorage.setItem("filtroTienda", tipo);
+    renderTienda();
+}
+
+function renderTienda() {
+    const container = document.getElementById("cosmeticos");
     container.innerHTML = "";
 
-    data.cosmeticos.forEach(c => {
+    let filtrados = cosmeticosGlobal;
+
+    if (filtroActual !== "todos") {
+        filtrados = cosmeticosGlobal.filter(c => c.tipo_cosmetico === filtroActual);
+    }
+
+    const inicio = (paginaActual - 1) * ITEMS_POR_PAGINA;
+    const paginaItems = filtrados.slice(inicio, inicio + ITEMS_POR_PAGINA);
+
+    paginaItems.forEach(c => {
         const div = document.createElement("div");
 
         div.innerHTML = `
@@ -526,8 +557,10 @@ async function cargarTienda() {
         const btn = div.querySelector("button");
 
         btn.onclick = async () => {
+            const token = localStorage.getItem("token");
+
             if (c.activo) {
-                await fetch("http://localhost:3000/api/quitar", {
+                await fetch("/api/quitar", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -536,7 +569,7 @@ async function cargarTienda() {
                     body: JSON.stringify({ id_cosmetico: c.id_cosmetico })
                 });
             } else if (c.comprado) {
-                await fetch("http://localhost:3000/api/equipar", {
+                await fetch("/api/equipar", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -545,7 +578,7 @@ async function cargarTienda() {
                     body: JSON.stringify({ id_cosmetico: c.id_cosmetico })
                 });
             } else {
-                await fetch("http://localhost:3000/api/comprar", {
+                await fetch("/api/comprar", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -561,6 +594,37 @@ async function cargarTienda() {
 
         container.appendChild(div);
     });
+
+    renderPaginacion(filtrados.length);
+}
+
+function renderPaginacion(totalItems) {
+    const cont = document.getElementById("paginacion");
+    cont.innerHTML = "";
+
+    const totalPaginas = Math.ceil(totalItems / ITEMS_POR_PAGINA);
+
+    if (totalPaginas <= 1) return;
+
+    if (paginaActual > 1) {
+        const prev = document.createElement("button");
+        prev.textContent = "←";
+        prev.onclick = () => {
+            paginaActual--;
+            renderTienda();
+        };
+        cont.appendChild(prev);
+    }
+
+    if (paginaActual < totalPaginas) {
+        const next = document.createElement("button");
+        next.textContent = "→";
+        next.onclick = () => {
+            paginaActual++;
+            renderTienda();
+        };
+        cont.appendChild(next);
+    }
 }
 
 async function cargarAvatar() {

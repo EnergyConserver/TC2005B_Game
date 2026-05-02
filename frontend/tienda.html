@@ -8,9 +8,17 @@
     <body style="display: none;">
         <h1>Tienda</h1>
         <button onclick="regresarHome()">Volver a inicio</button>
+        <div class="filtros">
+            <button onclick="cambiarFiltro('todos')">Todos</button>
+            <button onclick="cambiarFiltro('cuerpo')">Cuerpo</button>
+            <button onclick="cambiarFiltro('cabeza')">Cabeza</button>
+            <button onclick="cambiarFiltro('pies')">Pies</button>
+            <button onclick="cambiarFiltro('accesorio')">Accesorios</button>
+        </div>
         <div class="containerTienda">
             <div id="avatar"></div>
             <div id="cosmeticos"></div>
+            <div id="paginacion"></div>
         </div>
     </body>
 </html>
