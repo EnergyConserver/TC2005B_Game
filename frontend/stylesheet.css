@@ -246,8 +246,8 @@
 }
 
 .tooltip-text {
-  visibility: hidden;
-  opacity: 0;
+  visibility: visible;
+  opacity: 1;
   width: 180px;
   background-color: black;
   color: #fff;
@@ -286,10 +286,15 @@
 .button_perfil-container {
   top: 60%;
   left: 40%;
+  transition: transform 0.2s ease;  
+}
+
+.button_perfil-container:hover {
+  transform: scale(1.2);
 }
 
 .button_perfil-container .tooltip-text {
-  top: 100%;
+  top: 95%;
   left: 50%;
 }
 
@@ -297,19 +302,21 @@
   display: flex;
   flex-direction: row;
   gap: 8px;
+  align-items: flex-start;
 }
 
 .item-img {
-  width: 500px;
+  width: auto;
   height: auto;
+  object-fit: contain;
 }
 
 #avatar {
   position: relative;
-  flex: 2.5;
-  width: 325px;
-  height: 325px;
-  transform: scale(1.5);
+  flex: 0 0 20%;
+  align-self: center;
+  justify-content: center;
+  aspect-ratio: 1/1;
   pointer-events: none;
 }
 
@@ -317,61 +324,52 @@
   width: 375px;
   height: 200px;
   pointer-events: auto;
-  transition: transform 0.2s ease;
-}
-
-.homeFondo #avatar:hover {
-  transform: scale(1.9);
 }
 
 #cosmeticos {
-  flex: 5;
+  flex: 0 0 80%;
+  max-width: 80%;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: start;
+  gap: 15px;
+  justify-content: center;
+}
+
+#cosmeticos div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 140px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: white;
+}
+
+#cosmeticos p {
+  margin: 4px 0;
+  text-align: center;
+  font-size: 12px;
 }
 
 .layer {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
   pointer-events: none;
+  image-rendering: pixelated;
 }
 
-/* ropa */
-.layer.cuerpo {
-  top: -2px;
-  left: 0px;
+.containerTienda .layer {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1.5);
 }
 
-/* cabeza */
-.layer.cabeza {
-  top: -55px;
-  left: -5px;
-}
-
-.homeFondo .layer.cabeza {
-  top: -35px;
-  left: -2px;
-}
-
-/* accesorios */
-.layer.accesorio {
-  top: -12px;
-  left: 2px;
-}
-
-.layer.pies {
-  top: 58px;
-  left: 5px;
-}
-
-.homeFondo .layer.pies {
-  top: 35px;
-  left: 4px;
+.divButones .layer {
+  top: 15%;
+  left: 33%;
+  transform: scale(1.5);
 }
 
 .avatar-btn {
