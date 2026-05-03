@@ -95,9 +95,9 @@ app.post("/login", async (req, res) => {
 
         if (match) {
             const token = jwt.sign(
-                {id: user.id_usuario, email: user.correo, rol: user.tipo_usuario},
+                {id: user.id_usuario, email: user.correo, nombre: user.nombre, rol: user.tipo_usuario},
                 SECRET,
-                { expiresIn: '1hr' }
+                { expiresIn: '24hr' }
             );
 
             return res.json({
@@ -123,7 +123,29 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-    const { email, password } = req.body;
+    const { nombre, email, password } = req.body;
+
+    if (!nombre || nombre.trim().length < 2) {
+        return res.json({
+            status: "error",
+            message: "Se debe insertar un nombre de más de 2 carácteres"
+        });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.json({
+            status: "error",
+            message: "Se debe insertar un correo válido"
+        });
+    }
+
+    if (!password || password.length < 6) {
+        return res.json({
+            status: "error",
+            message: "La contraseña debe tener al menos 6 caracteres"
+        });
+    }
 
     let conn;
     try {
@@ -144,14 +166,14 @@ app.post("/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await conn.query(
-            "INSERT INTO usuarios (correo, contraseña, tipo_usuario) VALUES (?, ?, 'alumno')",
-            [email, hashedPassword]
+            "INSERT INTO usuarios (nombre, correo, contraseña, tipo_usuario) VALUES (?, ?, ?, 'alumno')",
+            [nombre, email, hashedPassword]
         );
 
         const token = jwt.sign(
-            {id: Number(result.insertId), email: email, rol: "alumno"},
+            {id: Number(result.insertId), email: email, nombre: nombre, rol: "alumno"},
             SECRET,
-            {expiresIn: '1hr'}
+            {expiresIn: '24hr'}
         )
 
         res.json({
@@ -249,6 +271,15 @@ app.post("/api/jugar", verifyToken, async (req, res) => {
         const acierto = (x === meta.meta_x && y === meta.meta_y);
 
         if (acierto) {
+            let puntos = 100;
+
+            if (intentos === 1) {
+                puntos += 50;
+            }
+
+            puntos -= (intentos - 1) * 10;
+            if (puntos < 10) puntos = 10;
+            
             const nivelRow = await conn.query(`
             SELECT n.id_nivel
             FROM niveles n
@@ -276,17 +307,24 @@ app.post("/api/jugar", verifyToken, async (req, res) => {
                     SET monedas = monedas + 100
                     WHERE id_usuario = ?
                 `, [req.user.id]);
+            } else {
+                await conn.query(`
+                    UPDATE usuarios
+                    SET monedas = monedas + 10
+                    WHERE id_usuario = ?
+                `, [req.user.id]);
             }
 
             await conn.query(`
                 INSERT INTO progreso_usuario
-                (id_usuario, id_nivel, completado, intentos, uso_explicacion)
-                VALUES (?, ?, 1, ?, ?)
+                (id_usuario, id_nivel, completado, intentos, uso_explicacion, puntaje)
+                VALUES (?, ?, 1, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE 
                 completado = 1,
                 intentos = LEAST(intentos, VALUES(intentos)),
-                uso_explicacion = uso_explicacion OR VALUES(uso_explicacion)
-            `, [req.user.id, idNivel, intentos, usoHint ? 1 : 0]);
+                uso_explicacion = uso_explicacion OR VALUES(uso_explicacion),
+                puntaje = GREATEST(puntaje, VALUES(puntaje))
+            `, [req.user.id, idNivel, intentos, usoHint ? 1 : 0], puntos);
         }
 
         res.json({
@@ -606,6 +644,226 @@ app.get("/api/monedas", verifyToken, async (req, res) => {
             monedas: rows[0].monedas
         });
 
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.post("/api/grupos", verifyToken, async (req, res) => {
+    const { nombre } = req.body;
+
+    const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        await conn.query(
+            "INSERT INTO grupos (nombre, codigo_acceso, id_profesor) VALUES (?, ?, ?)",
+            [nombre, codigo, req.user.id]
+        );
+
+        res.json({ status: "success", codigo });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ 
+            status: "error",
+            message: "Error al crear el grupo" 
+        });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.post("/api/grupos/unirse", verifyToken, async (req, res) => {
+    const { codigo } = req.body;
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const [grupo] = await conn.query(
+            "SELECT id_grupo FROM grupos WHERE codigo_acceso = ?",
+            [codigo]
+        );
+
+        if (!grupo) {
+            return res.json({ status: "error", message: "Código inválido" });
+        }
+
+        await conn.query(
+            "INSERT INTO grupos_usuario (id_usuario, id_grupo) VALUES (?, ?) ON DUPLICATE KEY UPDATE id_usuario = id_usuario;",
+            [req.user.id, grupo.id_grupo]
+        );
+
+        res.json({ status: "success" });
+
+    } catch (err) {
+        res.status(500).json({ status: "error" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.get("/api/mis-grupos", verifyToken, async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const grupos = await conn.query(`
+            SELECT g.*
+            FROM grupos g
+            JOIN grupos_usuario gu ON g.id_grupo = gu.id_grupo
+            WHERE gu.id_usuario = ?
+        `, [req.user.id]);
+
+        res.json({ grupos });
+
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.get("/api/grupos/:id/alumnos", verifyToken, verifyRole("profesor"), async (req, res) => {
+    const { id } = req.params;
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const alumnos = await conn.query(`
+            SELECT u.id_usuario, u.correo
+            FROM usuarios u
+            JOIN grupos_usuario gu ON u.id_usuario = gu.id_usuario
+            WHERE gu.id_grupo = ?
+        `, [id]);
+
+        res.json({ alumnos });
+
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.get("/api/grupos/:id/estadisticas", verifyToken, verifyRole("profesor"), async (req, res) => {
+    const { id } = req.params;
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const alumnos = await conn.query(`
+            SELECT 
+                u.correo AS nombre,
+                COUNT(DISTINCT pu.id_nivel) AS niveles,
+                COUNT(DISTINCT m.id_mundo) AS mundos,
+                SUM(pu.puntaje) AS puntaje
+
+            FROM usuarios u
+
+            JOIN grupos_usuario gu 
+                ON u.id_usuario = gu.id_usuario
+
+            LEFT JOIN progreso_usuario pu 
+                ON u.id_usuario = pu.id_usuario 
+                AND pu.completado = 1
+
+            LEFT JOIN niveles n 
+                ON pu.id_nivel = n.id_nivel
+
+            LEFT JOIN mundos m 
+                ON n.id_mundo = m.id_mundo
+
+            WHERE gu.id_grupo = ?
+
+            AND (
+                m.id_mundo IS NULL OR NOT EXISTS (
+                    SELECT 1
+                    FROM niveles n2
+                    WHERE n2.id_mundo = m.id_mundo
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM progreso_usuario pu2
+                        WHERE pu2.id_nivel = n2.id_nivel
+                        AND pu2.id_usuario = u.id_usuario
+                        AND pu2.completado = 1
+                    )
+                )
+            )
+
+            GROUP BY u.id_usuario
+        `, [id]);
+
+        res.json({
+            alumnos: alumnos.map(a => ({
+                nombre: a.nombre,
+                niveles: Number(a.niveles),
+                mundos: Number(a.mundos),
+                puntaje: Number(a.puntaje)
+            }))
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ status: "error" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.get("/api/grupos-profesor", verifyToken, verifyRole("profesor"), async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const grupos = await conn.query(
+            "SELECT * FROM grupos WHERE id_profesor = ?",
+            [req.user.id]
+        );
+
+        res.json({ grupos });
+
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+app.delete("/api/grupos/:id", verifyToken, verifyRole("profesor"), async (req, res) => {
+    const { id } = req.params;
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const [grupo] = await conn.query(
+            "SELECT * FROM grupos WHERE id_grupo = ? AND id_profesor = ?",
+            [id, req.user.id]
+        );
+
+        if (!grupo) {
+            return res.status(403).json({
+                status: "error",
+                message: "No autorizado para eliminar este grupo"
+            });
+        }
+
+        await conn.query(
+            "DELETE FROM grupos WHERE id_grupo = ?",
+            [id]
+        );
+
+        res.json({
+            status: "success",
+            message: "Grupo eliminado correctamente"
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: "error",
+            message: "Error del servidor"
+        });
     } finally {
         if (conn) conn.release();
     }

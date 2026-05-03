@@ -24,8 +24,11 @@
                 </span>
             </div>
         </button>
-        <form class="form" id="registerForm">
+        <form class="form" id="registerForm" novalidate>
             <p class="form-title">Crea tu cuenta</p>
+            <div class="input-container">
+                <input name="nombre" placeholder="Nombre" type="text" required>
+            </div>
             <div class="input-container">
                 <input name="email" placeholder="Correo" type="email" required>
             </div>
