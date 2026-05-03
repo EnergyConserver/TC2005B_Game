@@ -324,7 +324,7 @@ app.post("/api/jugar", verifyToken, async (req, res) => {
                 intentos = LEAST(intentos, VALUES(intentos)),
                 uso_explicacion = uso_explicacion OR VALUES(uso_explicacion),
                 puntaje = GREATEST(puntaje, VALUES(puntaje))
-            `, [req.user.id, idNivel, intentos, usoHint ? 1 : 0], puntos);
+            `, [req.user.id, idNivel, intentos, usoHint ? 1 : 0, puntos]);
         }
 
         res.json({
@@ -755,7 +755,8 @@ app.get("/api/grupos/:id/estadisticas", verifyToken, verifyRole("profesor"), asy
 
         const alumnos = await conn.query(`
             SELECT 
-                u.correo AS nombre,
+                u.correo AS correo,
+                u.nombre AS nombre,
                 COUNT(DISTINCT pu.id_nivel) AS niveles,
                 COUNT(DISTINCT m.id_mundo) AS mundos,
                 SUM(pu.puntaje) AS puntaje
@@ -797,6 +798,7 @@ app.get("/api/grupos/:id/estadisticas", verifyToken, verifyRole("profesor"), asy
 
         res.json({
             alumnos: alumnos.map(a => ({
+                correo: a.correo,
                 nombre: a.nombre,
                 niveles: Number(a.niveles),
                 mundos: Number(a.mundos),

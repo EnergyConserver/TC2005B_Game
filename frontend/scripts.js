@@ -133,6 +133,8 @@ if (registerForm) {
 
 const canvas = document.getElementById("canvas_grid");
 let usoHint = false;
+let capasAvatar = [];
+let avatarCargado = false;
 if(canvas) {
     const ctx = canvas.getContext("2d");
     const size = 700;
@@ -141,6 +143,8 @@ if(canvas) {
     const mundo = localStorage.getItem("mundoSeleccionado");
     const nivel = localStorage.getItem("nivelSeleccionado");
     const token = localStorage.getItem("token");
+    let puntoInicio;
+    let puntoActual;
 
     let puntoCorrecto;
     let puntos = [];
@@ -180,6 +184,66 @@ if(canvas) {
             ctx.fillStyle = "red";
             ctx.fill();
         });
+    }
+    
+    async function cargarAvatarCanvas() {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("/api/avatar", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        const data = await res.json();
+
+        capasAvatar = [];
+
+        function cargarImg(src) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => resolve(img);
+            });
+        }
+
+        const base = await cargarImg("/cosmeticos/base_pato.png");
+        capasAvatar.push(base);
+
+        const orden = ["cuerpo", "pies", "cabeza", "accesorio"];
+
+        for (const tipo of orden) {
+            const capa = data.avatar.find(c => c.tipo_cosmetico === tipo);
+            if (capa) {
+                const img = await cargarImg(`/cosmeticos/${capa.imagen}`);
+                capasAvatar.push(img);
+            }
+        }
+        avatarCargado = true;
+    }
+
+    function drawPlayer() {
+        const px = size / 2 + puntoActual.x * step;
+        const py = size / 2 - puntoActual.y * step;
+        const tamaño = 60;
+
+        if (!avatarCargado) return;
+
+        capasAvatar.forEach(img => {
+            ctx.drawImage(
+                img,
+                px - tamaño / 2,
+                py - tamaño / 2,
+                tamaño,
+                tamaño
+            );
+        });
+    }
+
+    function render() {
+        drawGrid();
+        drawPoints();
+        drawPlayer();
     }
 
     function obtenerCuadrante(x, y) {
@@ -239,6 +303,15 @@ if(canvas) {
                 y: data.nivel.meta_y
             };
 
+            puntoInicio = {
+                x: data.nivel.inicio_x,
+                y: data.nivel.inicio_y
+            };
+
+            puntoActual = { ...puntoInicio };
+
+            generarPuntos();
+
             const preguntaElem = document.getElementById("pregunta");
             const hintElem = document.getElementById("hint");
             const btn = document.getElementById("btnHint");
@@ -257,31 +330,41 @@ if(canvas) {
                 btn.innerText = "Mostrar pista";
             }
 
-            generarPuntos();
-            drawGrid();
-            drawPoints();
+            await cargarAvatarCanvas();
+            render();
         }
     }
 
-    canvas.addEventListener("click", async (e) => {
-        const rect = canvas.getBoundingClientRect();
+    function moverJugador(destino, verificar = true) {
+        const velocidad = 0.04;
 
-        const xPixel = e.clientX - rect.left;
-        const yPixel = e.clientY - rect.top;
+        function animar() {
+            const dx = destino.x - puntoActual.x;
+            const dy = destino.y - puntoActual.y;
 
-        // Convertir a coordenadas cartesianas
-        let x = (xPixel - size / 2) / step;
-        let y = (size / 2 - yPixel) / step;
+            const distancia = Math.sqrt(dx * dx + dy * dy);
 
-        // Redondear a enteros
-        x = Math.round(x);
-        y = Math.round(y);
+            if (distancia < 0.05) {
+                puntoActual = { ...destino };
+                render();
+                
+                if (verificar) {
+                    verificarResultado(destino);
+                }
 
-        document.getElementById("coords").textContent = `(${x}, ${y})`;
+                return;
+            }
+            
+            puntoActual.x += dx * velocidad;
+            puntoActual.y += dy * velocidad;
 
-        const clicked = puntos.find(p => p.x === x && p.y === y);
-        if (!clicked) return;
+            render();
+            requestAnimationFrame(animar);
+        }
+        animar();
+    }
 
+    async function verificarResultado(destino) {
         intentos++;
 
         const res = await fetch("http://localhost:3000/api/jugar", {
@@ -291,15 +374,15 @@ if(canvas) {
                 "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify({
-                x,
-                y,
+                x: destino.x,
+                y: destino.y,
                 mundo: Number(mundo),
                 nivel: Number(nivel),
                 intentos,
                 usoHint
             })
         });
-
+            
         const data = await res.json();
 
         if (data.resultado === "acierto") {
@@ -324,12 +407,36 @@ if(canvas) {
             fallos++;
 
             alert("Intenta otra vez");
+            moverJugador(puntoInicio, false);
 
             const btnHint = document.getElementById("btnHint");
             if (fallos >= 1 && btnHint) {
                 btnHint.style.display = "block";
             }
         }
+    }
+
+    canvas.addEventListener("click", async (e) => {
+        const rect = canvas.getBoundingClientRect();
+
+        const xPixel = e.clientX - rect.left;
+        const yPixel = e.clientY - rect.top;
+
+        // Convertir a coordenadas cartesianas
+        let x = (xPixel - size / 2) / step;
+        let y = (size / 2 - yPixel) / step;
+
+        // Redondear a enteros
+        x = Math.round(x);
+        y = Math.round(y);
+
+        document.getElementById("coords").textContent = `(${x}, ${y})`;
+
+        const destino = puntos.find(p => p.x === x && p.y === y);
+        if (!destino) return;
+
+        moverJugador(destino);
+
     });
 
     cargarNivel();
@@ -878,7 +985,7 @@ async function verAlumnos(idGrupo) {
 
     data.alumnos.forEach(a => {
         const li = document.createElement("li");
-        li.innerHTML = `<strong>${a.nombre}</strong> - ${a.mundos} mundos - ${a.puntaje} pts`;
+        li.innerHTML = `<strong>${a.nombre}</strong>(${a.correo}) - ${a.mundos} isla - ${a.puntaje} pts`;
         lista.appendChild(li);
     });
 }
