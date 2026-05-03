@@ -235,6 +235,74 @@ app.post("/admin/crear-profesor", verifyToken, verifyRole("admin"), async (req, 
     }
 });
 
+app.put("/api/usuario", verifyToken, async (req, res) => {
+    const { nombre, correo, password } = req.body;
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const updates = [];
+        const values = [];
+
+        if (nombre) {
+            updates.push("nombre = ?");
+            values.push(nombre);
+        }
+
+        if (correo) {
+            updates.push("correo = ?");
+            values.push(correo);
+        }
+
+        if (password) {
+            const hashed = await bcrypt.hash(password, 10);
+            updates.push("contraseña = ?");
+            values.push(hashed);
+        }
+
+        if (updates.length === 0) {
+            return res.json({
+                status: "error",
+                message: "No hay cambios"
+            });
+        }
+
+        values.push(req.user.id);
+
+        await conn.query(
+            `UPDATE usuarios SET ${updates.join(", ")} WHERE id_usuario = ?`,
+            values
+        );
+
+        const newToken = jwt.sign(
+            {
+                id: req.user.id,
+                email: correo || req.user.email,
+                nombre: nombre || req.user.nombre,
+                rol: req.user.rol
+            },
+            SECRET,
+            { expiresIn: "24h" }
+        );
+
+        res.json({
+            status: "success",
+            message: "Perfil actualizado",
+            token: newToken
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: "error",
+            message: "Error del servidor"
+        });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
 app.post("/api/jugar", verifyToken, async (req, res) => {
     const { x, y, mundo, nivel, intentos, usoHint } = req.body;
 
@@ -278,6 +346,11 @@ app.post("/api/jugar", verifyToken, async (req, res) => {
             }
 
             puntos -= (intentos - 1) * 10;
+
+            if (usoHint) {
+                puntos -= 20;
+            }
+
             if (puntos < 10) puntos = 10;
             
             const nivelRow = await conn.query(`

@@ -9,6 +9,18 @@
         <h1>Perfil</h1>
         <button onclick="cerrarSesion()">Cerrar sesión</button>
         <button onclick="regresarHome()">Volver a inicio</button>
+        
+        <h3>Actualizar perfil</h3>
+        <input type="text" id="nuevoNombre" placeholder="Nuevo nombre">
+        <button onclick="actualizarPerfil('nombre')">Cambiar nombre</button>
+        <br><br>
+        <input type="email" id="nuevoCorreo" placeholder="Nuevo correo">
+        <button onclick="actualizarPerfil('correo')">Cambiar correo</button>
+        <br><br>
+        <input type="password" id="nuevaPassword" placeholder="Nueva contraseña">
+        <button onclick="actualizarPerfil('password')">Cambiar contraseña</button>
+        <p id="mensajePerfil"></p>
+        
         <h3>Unirse a un grupo</h3>
         <input type="text" id="codigoGrupo" placeholder="Código del grupo">
         <button onclick="unirseGrupo()">Unirse</button>

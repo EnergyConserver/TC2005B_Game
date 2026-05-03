@@ -990,6 +990,60 @@ async function verAlumnos(idGrupo) {
     });
 }
 
+async function actualizarPerfil(campo) {
+    const mensaje = document.getElementById("mensajePerfil");
+    const token = localStorage.getItem("token");
+
+    let valor;
+
+    if (campo === "nombre") {
+        valor = document.getElementById("nuevoNombre").value;
+    }
+
+    if (campo === "correo") {
+        valor = document.getElementById("nuevoCorreo").value;
+    }
+
+    if (campo === "password") {
+        valor = document.getElementById("nuevaPassword").value;
+    }
+
+    try {
+        const res = await fetch("/api/usuario", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                [campo]: valor
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+            }
+            mensaje.style.color = "green";
+            let texto = "";
+            if (campo === "nombre") texto = "Nombre cambiado correctamente";
+            if (campo === "correo") texto = "Correo cambiado correctamente";
+            if (campo === "password") texto = "Contraseña cambiada correctamente";
+
+            mensaje.innerText = texto;
+        } else {
+            mensaje.style.color = "red";
+            mensaje.innerText = data.message;
+        }
+
+    } catch (err) {
+        mensaje.style.color = "red";
+        mensaje.innerText = "Error del servidor";
+    }
+}
+
 if (window.location.pathname === "/tienda") {
     cargarTienda();
     cargarAvatar();
