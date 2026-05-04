@@ -484,7 +484,9 @@ app.get("/api/nivel", verifyToken, async (req, res) => {
                 ST_Y(n.coordenada_meta) AS meta_y,
                 n.movimientos_max,
                 n.pregunta,
-                n.hint
+                n.hint,
+                n.tipo,
+                n.id_nivel
             FROM niveles n
             JOIN mundos m ON n.id_mundo = m.id_mundo
             WHERE m.orden = ? AND n.orden_nivel = ?
@@ -497,9 +499,35 @@ app.get("/api/nivel", verifyToken, async (req, res) => {
             });
         }
 
+        let vectores = [];
+
+        if (rows[0].tipo === "vectores") {
+            vectores = await conn.query(`
+                SELECT dx, dy, orden
+                FROM vectores_nivel
+                WHERE id_nivel = ?
+                ORDER BY orden
+            `, [rows[0].id_nivel]);
+        }
+        
+        let pregunta = rows[0].pregunta;
+
+        // Si es nivel de vectores, construir pregunta dinámica
+        if (rows[0].tipo === "vectores") {
+            const textoVectores = vectores
+            .map(v => `(${v.dx}, ${v.dy})`)
+            .join("\n↓\n");
+
+            pregunta = `Sigue los vectores en orden: \n\n${textoVectores}`;
+        }
+
         res.json({
             status: "success",
-            nivel: rows[0]
+            nivel: {
+                ...rows[0],
+                pregunta
+            },
+            vectores: vectores
         });
 
     } catch (err) {

@@ -135,6 +135,9 @@ const canvas = document.getElementById("canvas_grid");
 let usoHint = false;
 let capasAvatar = [];
 let avatarCargado = false;
+let vectores = [];
+let pasoActual = 0;
+let tipoNivel = "punto";
 if(canvas) {
     const ctx = canvas.getContext("2d");
     const size = 700;
@@ -175,6 +178,8 @@ if(canvas) {
     }
 
     function drawPoints() {
+        if (tipoNivel === "vectores") return;
+        
         puntos.forEach(p => {
             const px = size / 2 + p.x * step;
             const py = size / 2 - p.y * step;
@@ -297,6 +302,10 @@ if(canvas) {
             return;
         }
 
+        tipoNivel = data.nivel.tipo || "punto";
+        vectores = data.vectores || [];
+        pasoActual = 0;
+
         if (data.status === "success") {
             puntoCorrecto = {
                 x: data.nivel.meta_x,
@@ -310,7 +319,11 @@ if(canvas) {
 
             puntoActual = { ...puntoInicio };
 
-            generarPuntos();
+            if (tipoNivel !== "vectores") {
+                generarPuntos();
+            } else {
+                puntos = [];
+            }
 
             const preguntaElem = document.getElementById("pregunta");
             const hintElem = document.getElementById("hint");
@@ -367,32 +380,80 @@ if(canvas) {
     async function verificarResultado(destino) {
         intentos++;
 
-        const res = await fetch("http://localhost:3000/api/jugar", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                x: destino.x,
-                y: destino.y,
-                mundo: Number(mundo),
-                nivel: Number(nivel),
-                intentos,
-                usoHint
-            })
-        });
-            
-        const data = await res.json();
-
-        if (data.resultado === "acierto") {
-            alert("¡Correcto! 🎉");
-            
-            const res = await fetch(`http://localhost:3000/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
-                headers: { "Authorization": `Bearer ${token}` }
+        // 🔵 MODO NORMAL (tu juego actual)
+        if (tipoNivel === "punto") {
+            const res = await fetch("http://localhost:3000/api/jugar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    x: destino.x,
+                    y: destino.y,
+                    mundo: Number(mundo),
+                    nivel: Number(nivel),
+                    intentos,
+                    usoHint
+                })
             });
 
-            const dataNext = await res.json();
+            const data = await res.json();
+
+            if (data.resultado === "acierto") {
+                terminarNivel();
+            } else {
+                fallo();
+            }
+            return;
+        }
+
+        const vector = vectores[pasoActual];
+
+        const esperado = {
+            x: puntoInicio.x + vectores
+                .slice(0, pasoActual + 1)
+                .reduce((sum, v) => sum + v.dx, 0),
+            y: puntoInicio.y + vectores
+                .slice(0, pasoActual + 1)
+                .reduce((sum, v) => sum + v.dy, 0)
+        };
+
+        if (destino.x === esperado.x && destino.y === esperado.y) {
+            pasoActual++;
+
+            if (pasoActual === vectores.length) {
+                await fetch("http://localhost:3000/api/jugar", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        x: destino.x,
+                        y: destino.y,
+                        mundo: Number(mundo),
+                        nivel: Number(nivel),
+                        intentos,
+                        usoHint
+                    })
+                });
+                terminarNivel();
+            }
+
+        } else {
+            fallo();
+        }
+    }
+
+    function terminarNivel() {
+        alert("¡Correcto! 🎉");
+
+        fetch(`http://localhost:3000/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(dataNext => {
             const btn = document.getElementById("btnNext");
 
             if (dataNext.existe) {
@@ -403,18 +464,23 @@ if(canvas) {
                 btn.textContent = "🏁 Terminar mundo";
                 btn.onclick = () => window.location.href = "/mundos";
             }
-        } else {
-            fallos++;
-
-            alert("Intenta otra vez");
-            moverJugador(puntoInicio, false);
-
-            const btnHint = document.getElementById("btnHint");
-            if (fallos >= 1 && btnHint) {
-                btnHint.style.display = "block";
-            }
-        }
+        });
     }
+
+    function fallo() {
+        fallos++;
+        alert("Intenta otra vez");
+
+        pasoActual = 0;
+        puntoActual = { ...puntoInicio };
+
+        moverJugador(puntoInicio, false);
+
+        const btnHint = document.getElementById("btnHint");
+        if (fallos >= 1 && btnHint) {
+            btnHint.style.display = "block";
+        }
+    } 
 
     canvas.addEventListener("click", async (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -432,8 +498,14 @@ if(canvas) {
 
         document.getElementById("coords").textContent = `(${x}, ${y})`;
 
-        const destino = puntos.find(p => p.x === x && p.y === y);
-        if (!destino) return;
+        let destino;
+
+        if (tipoNivel === "vectores") {
+            destino = { x, y };
+        } else {
+            destino = puntos.find(p => p.x === x && p.y === y);
+            if (!destino) return;
+        }
 
         moverJugador(destino);
 
@@ -575,7 +647,7 @@ async function seleccionarMundo(mundo) {
     const permitido = await puedeAccederAMundo(mundo);
 
     if (!permitido) {
-        alert("Debes completar el mundo anterior");
+        alert("Debes completar la isla anterior");
         return;
     }
     

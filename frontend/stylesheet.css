@@ -490,10 +490,20 @@
 
 .button_nivel1 {
   top: 35%;
-  left: 30%;
+  left: 20%;
 }
 
 .button_nivel2 {
+  top: 55%;
+  left: 36%;
+}
+
+.button_nivel3 {
+  top: 35%;
+  left: 51%;
+}
+
+.button_nivel4 {
   top: 55%;
   left: 65%;
 }
@@ -501,14 +511,18 @@
 .button_isla1,
 .button_isla2,
 .button_nivel1,
-.button_nivel2 {
+.button_nivel2,
+.button_nivel3,
+.button_nivel4 {
   transition: transform 0.2s ease;
 }
 
 .button_isla1:hover,
 .button_isla2:hover,
 .button_nivel1:hover,
-.button_nivel2:hover {
+.button_nivel2:hover,
+.button_nivel3:hover,
+.button_nivel4:hover {
   transform: scale(1.2);
 }
 
