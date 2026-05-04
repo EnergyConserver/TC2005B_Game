@@ -52,7 +52,7 @@ if (loginForm) {
         const mensaje = document.getElementById("mensajeServer");
 
         try {
-            const res = await fetch("http://localhost:3000/login", {
+            const res = await fetch("/api/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -101,7 +101,7 @@ if (registerForm) {
         const mensaje = document.getElementById("mensajeServer");
 
         try {
-            const res = await fetch("http://localhost:3000/register", {
+            const res = await fetch("/api/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -288,7 +288,7 @@ if(canvas) {
     async function cargarNivel() {
         fallos = 0;
 
-        const res = await fetch(`http://localhost:3000/api/nivel?mundo=${mundo}&nivel=${nivel}`, {
+        const res = await fetch(`/api/nivel?mundo=${mundo}&nivel=${nivel}`, {
             headers: {
                 "Authorization": `Bearer ${token}`
             }
@@ -382,7 +382,7 @@ if(canvas) {
 
         // 🔵 MODO NORMAL (tu juego actual)
         if (tipoNivel === "punto") {
-            const res = await fetch("http://localhost:3000/api/jugar", {
+            const res = await fetch("/api/jugar", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -423,7 +423,7 @@ if(canvas) {
             pasoActual++;
 
             if (pasoActual === vectores.length) {
-                await fetch("http://localhost:3000/api/jugar", {
+                await fetch("/api/jugar", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -449,7 +449,7 @@ if(canvas) {
     function terminarNivel() {
         alert("¡Correcto! 🎉");
 
-        fetch(`http://localhost:3000/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
+        fetch(`/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
             headers: { "Authorization": `Bearer ${token}` }
         })
         .then(res => res.json())
@@ -527,7 +527,7 @@ if (crearProfesorForm) {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch("http://localhost:3000/admin/crear-profesor", {
+            const res = await fetch("/api/admin/crear-profesor", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -555,7 +555,7 @@ if (crearProfesorForm) {
 
 async function verificarAcceso(token) {
     try {
-        const res = await fetch("http://localhost:3000/verification", {
+        const res = await fetch("/api/verification", {
             method: "GET", 
             headers: {
                 "Content-Type": "application/json",
@@ -634,7 +634,7 @@ function irAventura() {
 async function puedeAccederAMundo(mundo) {
     const token = localStorage.getItem("token");
 
-    const res = await fetch(`http://localhost:3000/api/nivel?mundo=${mundo}&nivel=1`, {
+    const res = await fetch(`/api/nivel?mundo=${mundo}&nivel=1`, {
         headers: {
             "Authorization": `Bearer ${token}`
         }
@@ -659,7 +659,7 @@ async function seleccionarNivel(nivel) {
     const mundo = localStorage.getItem("mundoSeleccionado");
     const token = localStorage.getItem("token");
 
-    const res = await fetch(`http://localhost:3000/api/nivel?mundo=${mundo}&nivel=${nivel}`, {
+    const res = await fetch(`/api/nivel?mundo=${mundo}&nivel=${nivel}`, {
         headers: {
             "Authorization": `Bearer ${token}`
         }
@@ -696,7 +696,7 @@ async function irSiguienteNivel() {
     let mundo = Number(localStorage.getItem("mundoSeleccionado"));
     let nivel = Number(localStorage.getItem("nivelSeleccionado"));
 
-    const res = await fetch(`http://localhost:3000/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
+    const res = await fetch(`/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
         headers: {
             "Authorization": `Bearer ${localStorage.getItem("token")}`
         }
@@ -714,6 +714,58 @@ async function irSiguienteNivel() {
     }
 }
 
+async function cargarEstadoNiveles() {
+    const mundo = localStorage.getItem("mundoSeleccionado");
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`/api/progreso-mundo?mundo=${mundo}`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    const data = await res.json();
+    const niveles = data.niveles;
+
+    niveles.forEach((nivel, index) => {
+        const div = document.querySelector(`.button_nivel${nivel.orden_nivel}`);
+
+        if (!div) return;
+
+        div.classList.remove("bloqueado", "disponible", "completado");
+
+        if (index > 0 && niveles[index - 1].estado !== "completado") {
+            div.classList.add("bloqueado");
+        } 
+        else if (nivel.estado === "completado") {
+            div.classList.add("completado");
+        } 
+        else {
+            div.classList.add("disponible");
+        }
+
+        const btn = div.querySelector("button");
+        btn.onclick = () => {
+            if (div.classList.contains("bloqueado")) {
+                alert("Debes completar el nivel anterior");
+                return;
+            }
+            seleccionarNivel(nivel.orden_nivel);
+        };
+    });
+}
+
+function regresarANiveles() {
+    const mundo = localStorage.getItem("mundoSeleccionado");
+
+    if (!mundo) {
+        window.location.href = "/mundos";
+        return;
+    }
+
+    window.location.href = "/niveles";
+}
+
 let cosmeticosGlobal = [];
 let filtroActual = "todos";
 let paginaActual = 1;
@@ -722,7 +774,7 @@ const ITEMS_POR_PAGINA = 6;
 async function cargarTienda() {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:3000/api/tienda", {
+    const res = await fetch("/api/tienda", {
         headers: {
             "Authorization": `Bearer ${token}`
         }
@@ -845,7 +897,7 @@ function renderPaginacion(totalItems) {
 async function cargarAvatar() {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:3000/api/avatar", {
+    const res = await fetch("/api/avatar", {
         headers: {
             "Authorization": `Bearer ${token}`
         }
@@ -878,7 +930,7 @@ async function cargarAvatar() {
 async function cargarMonedas() {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:3000/api/monedas", {
+    const res = await fetch("/api/monedas", {
         headers: {
             "Authorization": `Bearer ${token}`
         }
@@ -1137,6 +1189,10 @@ if (window.location.pathname === "/dashboard") {
             verAlumnos(grupoSeleccionado);
         }
     }, 5000); // cada 5 segundos
+}
+
+if (window.location.pathname === "/niveles") {
+    cargarEstadoNiveles();
 }
 
 function regresarHome() {

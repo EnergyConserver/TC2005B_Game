@@ -465,8 +465,17 @@
   background-image: url("images/isla_nocompletada.png");
 }
 
-.nivel {
+.nivel.bloqueado {
+  background-image: url("images/nivel_bloqueado.png");
+  opacity: 0.5;
+}
+
+.nivel.disponible {
   background-image: url("images/nivel_nocompletado.png");
+}
+
+.nivel.completado {
+  background-image: url("images/nivel_completado.png");
 }
 
 .isla-btn {
