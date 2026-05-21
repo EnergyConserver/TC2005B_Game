@@ -135,6 +135,7 @@ const canvas = document.getElementById("canvas_grid");
 let usoHint = false;
 let capasAvatar = [];
 let avatarCargado = false;
+let jugadorMoviendose = false;
 let vectores = [];
 let pasoActual = 0;
 let tipoNivel = "punto";
@@ -175,6 +176,15 @@ if(canvas) {
             ctx.strokeStyle = i === 0 ? "black" : "#ccc";
             ctx.stroke();
         }
+
+        ctx.font = "15px Arial";
+        ctx.fillStyle = "black";
+
+        // Eje Y (arriba)
+        ctx.fillText("+Y", size / 2 + 10, 20);
+
+        // Eje X (derecha)
+        ctx.fillText("+X", size - 20, size / 2 - 10);
     }
 
     function drawPoints() {
@@ -349,6 +359,7 @@ if(canvas) {
     }
 
     function moverJugador(destino, verificar = true) {
+        jugadorMoviendose = true;
         const velocidad = 0.04;
 
         function animar() {
@@ -360,6 +371,8 @@ if(canvas) {
             if (distancia < 0.05) {
                 puntoActual = { ...destino };
                 render();
+
+                jugadorMoviendose = false;
                 
                 if (verificar) {
                     verificarResultado(destino);
@@ -483,6 +496,9 @@ if(canvas) {
     } 
 
     canvas.addEventListener("click", async (e) => {
+        
+        if (jugadorMoviendose) return;
+        
         const rect = canvas.getBoundingClientRect();
 
         const xPixel = e.clientX - rect.left;

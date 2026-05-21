@@ -1,7 +1,7 @@
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.19-11.8.6-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: localhost    Database: tecduck_test
+-- Host: localhost    Database: example
 -- ------------------------------------------------------
 -- Server version	11.8.6-MariaDB-0+deb13u1 from Debian
 
@@ -30,7 +30,7 @@ CREATE TABLE `cosmeticos` (
   `nombre` varchar(50) DEFAULT NULL,
   `imagen` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id_cosmetico`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -44,7 +44,17 @@ INSERT INTO `cosmeticos` VALUES
 (1,'pies',50,'Botas Arcoiris','botas_arcoiris.png'),
 (2,'cabeza',30,'Lentes Estrella','lentes_estrella.png'),
 (3,'pies',60,'Zapatillas Rosa','zapatillas_rosa.png'),
-(4,'cabeza',20,'Lentes Corazon','lentes_corazon.png');
+(4,'cabeza',20,'Lentes Corazon','lentes_corazon.png'),
+(5,'pies',50,'Botas Amarillas','botas_amarillas.png'),
+(6,'pies',50,'Botas Azules','botas_azules.png'),
+(7,'pies',60,'Botas Negras','botas_negras.png'),
+(8,'pies',60,'Botas Vaqueras','botas_vaqueras.png'),
+(9,'pies',60,'Chanclas','chanclas.png'),
+(10,'cabeza',30,'Lentes Dorados','lentes_dorados.png'),
+(11,'cabeza',30,'Lentes Negros','lentes_negros.png'),
+(12,'cabeza',30,'Lentes Rojos','lentes_rojos.png'),
+(13,'cabeza',20,'Lentes','lentes.png'),
+(14,'pies',50,'Pantuflas','pantuflas.png');
 /*!40000 ALTER TABLE `cosmeticos` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -87,7 +97,21 @@ INSERT INTO `cosmeticos_usuario` VALUES
 (13,1,1),
 (13,2,0),
 (13,3,0),
-(13,4,1);
+(13,4,1),
+(15,1,0),
+(15,2,0),
+(15,3,0),
+(15,4,0),
+(15,5,0),
+(15,6,0),
+(15,7,0),
+(15,8,0),
+(15,9,0),
+(15,10,0),
+(15,11,0),
+(15,12,0),
+(15,13,0),
+(15,14,1);
 /*!40000 ALTER TABLE `cosmeticos_usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -199,7 +223,6 @@ DROP TABLE IF EXISTS `niveles`;
 CREATE TABLE `niveles` (
   `id_nivel` int(11) NOT NULL AUTO_INCREMENT,
   `orden_nivel` int(11) DEFAULT NULL,
-  `movimientos_max` int(11) DEFAULT NULL,
   `coordenada_inicio` point DEFAULT NULL,
   `coordenada_meta` point DEFAULT NULL,
   `pregunta` varchar(200) DEFAULT NULL,
@@ -222,14 +245,14 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `niveles` WRITE;
 /*!40000 ALTER TABLE `niveles` DISABLE KEYS */;
 INSERT INTO `niveles` VALUES
-(4,1,5,0x00000000010100000000000000000000000000000000000000,0x000000000101000000000000000000084000000000000000C0,'Llega al punto (3,-2)','Esta en el cuadrante IV','facil',1,'punto','plano cartesiano'),
-(5,2,5,0x00000000010100000000000000000000000000000000000000,0x00000000010100000000000000000014400000000000001040,'Llega al punto (5,4)','Esta en el cuadrante I','facil',1,'punto','plano cartesiano'),
-(6,3,5,0x00000000010100000000000000000000000000000000000000,0x00000000010100000000000000000010C00000000000000040,'Llega al punto (-4,2)','Esta en el cuadrante II','facil',1,'punto','plano cartesiano'),
-(7,4,5,0x00000000010100000000000000000000000000000000000000,0x00000000010100000000000000000008400000000000000000,'Llega al punto (3,0)','Esta en un vertice','facil',1,'punto','plano cartesiano'),
-(12,1,NULL,0x00000000010100000000000000000000000000000000000000,0x00000000010100000000000000000008400000000000000040,'Suma los vectores paso a paso','Sigue cada vector desde tu posición actual','facil',2,'vectores','suma'),
-(13,2,NULL,0x000000000101000000000000000000F03F000000000000F03F,0x00000000010100000000000000000000400000000000000840,'Cuidado con los signos','Un vector puede restar','facil',2,'vectores','suma'),
-(14,3,NULL,0x00000000010100000000000000000000C0000000000000F03F,0x00000000010100000000000000000000400000000000000040,'Sigue la secuencia completa','No pierdas tu posición actual','intermedio',2,'vectores','suma'),
-(15,4,NULL,0x0000000001010000000000000000000000000000000000F0BF,0x00000000010100000000000000000008400000000000000040,'Controla bien cada movimiento','Avanza vector por vector, no te adelantes','dificil',2,'vectores','suma');
+(4,1,0x00000000010100000000000000000000000000000000000000,0x000000000101000000000000000000084000000000000000C0,'Llega al punto (3,-2)','Esta en el cuadrante IV','facil',1,'punto','plano cartesiano'),
+(5,2,0x00000000010100000000000000000000000000000000000000,0x00000000010100000000000000000014400000000000001040,'Llega al punto (5,4)','Esta en el cuadrante I','facil',1,'punto','plano cartesiano'),
+(6,3,0x00000000010100000000000000000000000000000000000000,0x00000000010100000000000000000010C00000000000000040,'Llega al punto (-4,2)','Esta en el cuadrante II','facil',1,'punto','plano cartesiano'),
+(7,4,0x00000000010100000000000000000000000000000000000000,0x00000000010100000000000000000008400000000000000000,'Llega al punto (3,0)','Esta en un vertice','facil',1,'punto','plano cartesiano'),
+(12,1,0x00000000010100000000000000000000000000000000000000,0x00000000010100000000000000000008400000000000000040,'Suma los vectores paso a paso','Sigue cada vector desde tu posición actual','facil',2,'vectores','suma'),
+(13,2,0x000000000101000000000000000000F03F000000000000F03F,0x00000000010100000000000000000000400000000000000840,'Cuidado con los signos','Un vector puede restar','facil',2,'vectores','suma'),
+(14,3,0x00000000010100000000000000000000C0000000000000F03F,0x00000000010100000000000000000000400000000000000040,'Sigue la secuencia completa','No pierdas tu posición actual','intermedio',2,'vectores','suma'),
+(15,4,0x0000000001010000000000000000000000000000000000F0BF,0x00000000010100000000000000000008400000000000000040,'Controla bien cada movimiento','Avanza vector por vector, no te adelantes','dificil',2,'vectores','suma');
 /*!40000 ALTER TABLE `niveles` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -288,7 +311,15 @@ INSERT INTO `progreso_usuario` VALUES
 (14,4,0,1,150,1),
 (14,5,0,1,150,1),
 (14,6,0,1,150,1),
-(14,7,0,1,150,1);
+(14,7,0,1,150,1),
+(15,4,0,1,150,1),
+(15,5,0,1,150,1),
+(15,6,0,1,150,1),
+(15,7,0,1,150,1),
+(15,12,0,1,60,5),
+(15,13,0,1,90,2),
+(15,14,0,1,80,3),
+(15,15,0,1,40,7);
 /*!40000 ALTER TABLE `progreso_usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -311,7 +342,7 @@ CREATE TABLE `usuarios` (
   `monedas` int(11) DEFAULT 0,
   PRIMARY KEY (`id_usuario`),
   UNIQUE KEY `correo` (`correo`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -324,7 +355,8 @@ LOCK TABLES `usuarios` WRITE;
 INSERT INTO `usuarios` VALUES
 (4,NULL,'admin@gmail.com','$2b$10$A6fEnr4NwR1geXrsbAtDuO98PtQeDtQyw7WBQjMYFr2Oay.qwUWyy','2026-04-25 19:12:34','admin',0),
 (5,NULL,'profesor@gmail.com','$2b$10$LIKm9q.fioHH/QuMvQqukOamE5mvQtk7/VZBne2hOJL01Lp2rJqKq','2026-04-25 19:31:25','profesor',0),
-(6,NULL,'alumno@gmail.com','$2b$10$7c8nFEgYsG8sPwsSfG58buarEjsqR6d6/Tb2SJTBerNTecJlU6b3S','2026-04-25 19:36:05','alumno',2180);
+(6,NULL,'alumno@gmail.com','$2b$10$7c8nFEgYsG8sPwsSfG58buarEjsqR6d6/Tb2SJTBerNTecJlU6b3S','2026-04-25 19:36:05','alumno',2180),
+(15,'Test3','test3@gmail.com','$2b$10$Kt0bqS5.FaRmmwiBORXEfuVbXMvD8v4weMV/JwmY1ZUklefpCJtQS','2026-05-15 18:20:57','alumno',200);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -382,4 +414,4 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-05-05 15:43:56
+-- Dump completed on 2026-05-21 11:24:47

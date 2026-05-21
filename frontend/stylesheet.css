@@ -323,6 +323,12 @@
   align-items: flex-start;
 }
 
+.tiendaContenido {
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+}
+
 .item-img {
   width: auto;
   height: auto;
@@ -370,6 +376,15 @@
   margin: 4px 0;
   text-align: center;
   font-size: 12px;
+}
+
+#paginacion {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 
 .layer {

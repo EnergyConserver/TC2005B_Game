@@ -183,7 +183,6 @@ router.get("/nivel", verifyToken, async (req, res) => {
                 ST_Y(n.coordenada_inicio) AS inicio_y,
                 ST_X(n.coordenada_meta) AS meta_x,
                 ST_Y(n.coordenada_meta) AS meta_y,
-                n.movimientos_max,
                 n.pregunta,
                 n.hint,
                 n.tipo,
@@ -216,7 +215,7 @@ router.get("/nivel", verifyToken, async (req, res) => {
         // Si es nivel de vectores, construir pregunta dinámica
         if (rows[0].tipo === "vectores") {
             const textoVectores = vectores
-            .map(v => `(${v.dx}, ${v.dy})`)
+            .map(v => `${v.dx}i, ${v.dy}j`)
             .join("\n↓\n");
 
             pregunta = `Sigue los vectores en orden: \n\n${textoVectores}`;
