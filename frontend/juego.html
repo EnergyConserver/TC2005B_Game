@@ -7,7 +7,7 @@
     </head>
     <body class="body_grid" style="display: none;">
         <div class="game-container">
-            <div>
+            <div class="game-sidebar">
                 <button onclick="regresarANiveles()">Regresar</button>
                 <div>
                     <h3 id="pregunta"></h3>
@@ -15,14 +15,9 @@
                         <button id="btnHint" onclick="mostrarHint()">Mostrar pista</button>
                 </div>
             </div>
-            <div>
+            <div class="game-canvas">
                 <canvas id="canvas_grid" width="700" height="700"></canvas>
-                <p id="coords">Click en el plano</p>
-                <button id="btnNext" style="display:none;" onclick="irSiguienteNivel()">
-                    Siguiente nivel ➜
-                </button>
             </div>
-            <div>Veo</div>
         </div>
 
     </body>

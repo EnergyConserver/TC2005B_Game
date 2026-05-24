@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        if (path === "/home") {
+        if (path === "/tienda") {
             cargarMonedas();
         }
     }
@@ -460,24 +460,38 @@ if(canvas) {
     }
 
     function terminarNivel() {
+        jugadorMoviendose = true;
+        
         alert("¡Correcto! 🎉");
 
-        fetch(`/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
-            headers: { "Authorization": `Bearer ${token}` }
-        })
-        .then(res => res.json())
-        .then(dataNext => {
-            const btn = document.getElementById("btnNext");
+        setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/siguiente-nivel?mundo=${mundo}&nivel=${nivel}`, {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+                const data = await res.json();
+                
+                if (data.existe) {
+                    const siguienteNivel = Number(nivel) + 1;
 
-            if (dataNext.existe) {
-                btn.style.display = "block";
-                btn.textContent = "Siguiente nivel ➜";
-            } else {
-                btn.style.display = "block";
-                btn.textContent = "🏁 Terminar mundo";
-                btn.onclick = () => window.location.href = "/mundos";
+                    localStorage.setItem("nivelSeleccionado", siguienteNivel);
+
+                    pasoActual = 0;
+                    vectores = [];
+                    puntos = [];
+
+                    window.location.href = "/juego";
+                } else {
+                    alert("Terminaste el mundo!");
+                    window.location.href = "/mundos";
+                }
+            } catch(err) {
+                alert("Error al cargar el siguiente nivel");
+                jugadorMoviendose = false;
             }
-        });
+        }, 500);
     }
 
     function fallo() {
@@ -511,8 +525,6 @@ if(canvas) {
         // Redondear a enteros
         x = Math.round(x);
         y = Math.round(y);
-
-        document.getElementById("coords").textContent = `(${x}, ${y})`;
 
         let destino;
 
@@ -871,8 +883,9 @@ function renderTienda() {
                 });
             }
 
-            cargarTienda();
-            cargarAvatar();
+            await cargarTienda();
+            await cargarAvatar();
+            await cargarMonedas();
         };
 
         container.appendChild(div);
@@ -956,7 +969,7 @@ async function cargarMonedas() {
 
     const h2 = document.getElementById("monedas");
     if (h2) {
-        h2.innerText = `${data.monedas}`;
+        h2.innerText = `💰: ${data.monedas}`;
     }
 }
 
