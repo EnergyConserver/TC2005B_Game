@@ -5,7 +5,7 @@ const path = require("path");
 const paginas = [
     "home", "login", "register", "perfil",
     "mundos", "niveles", "juego",
-    "tienda", "dashboard", "admin"
+    "tienda", "dashboard", "admin", "repaso"
 ];
 
 router.get("/", (req, res) => {

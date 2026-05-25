@@ -1,3 +1,8 @@
+const sonidoMoverse = new Audio("/sonidos/Walking.mp3");
+const sonidoFondo = new Audio("/sonidos/BackgroundSong.mp3");
+const sonidoResCorrecta = new Audio("/sonidos/CorrectAnswer.mp3");
+const sonidoResIncorrecta = new Audio("/sonidos/IncorrectAnswer.mp3");
+
 document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("token");
     const path = window.location.pathname;
@@ -139,7 +144,10 @@ let jugadorMoviendose = false;
 let vectores = [];
 let pasoActual = 0;
 let tipoNivel = "punto";
+let modoRepaso = false;
 if(canvas) {
+    modoRepaso = localStorage.getItem("modoRepaso") === "true";
+    
     const ctx = canvas.getContext("2d");
     const size = 700;
     const range = 10; // de -10 a 10
@@ -358,9 +366,14 @@ if(canvas) {
         }
     }
 
-    function moverJugador(destino, verificar = true) {
+    function moverJugador(destino, verificar = true, reproducirPaso = true) {
         jugadorMoviendose = true;
         const velocidad = 0.04;
+
+        if (reproducirPaso) {
+            sonidoMoverse.currentTime = 0;
+            sonidoMoverse.play();
+        }
 
         function animar() {
             const dx = destino.x - puntoActual.x;
@@ -369,6 +382,9 @@ if(canvas) {
             const distancia = Math.sqrt(dx * dx + dy * dy);
 
             if (distancia < 0.05) {
+                sonidoMoverse.pause();
+                sonidoMoverse.currentTime = 0;
+                
                 puntoActual = { ...destino };
                 render();
 
@@ -393,7 +409,6 @@ if(canvas) {
     async function verificarResultado(destino) {
         intentos++;
 
-        // 🔵 MODO NORMAL (tu juego actual)
         if (tipoNivel === "punto") {
             const res = await fetch("/api/jugar", {
                 method: "POST",
@@ -461,8 +476,19 @@ if(canvas) {
 
     function terminarNivel() {
         jugadorMoviendose = true;
+
+        sonidoMoverse.pause();
+        sonidoMoverse.currentTime = 0;
+        reproducirSonido(sonidoResCorrecta);
         
         alert("¡Correcto! 🎉");
+
+        if (modoRepaso) {
+            localStorage.removeItem("modoRepaso");
+            alert("Repaso completado");
+            window.location.href = "/repaso";
+            return;
+        }
 
         setTimeout(async () => {
             try {
@@ -496,12 +522,16 @@ if(canvas) {
 
     function fallo() {
         fallos++;
+
+        sonidoMoverse.pause();
+        sonidoMoverse.currentTime = 0;
+        reproducirSonido(sonidoResIncorrecta);
         alert("Intenta otra vez");
 
         pasoActual = 0;
         puntoActual = { ...puntoInicio };
 
-        moverJugador(puntoInicio, false);
+        moverJugador(puntoInicio, false, false);
 
         const btnHint = document.getElementById("btnHint");
         if (fallos >= 1 && btnHint) {
@@ -540,6 +570,73 @@ if(canvas) {
     });
 
     cargarNivel();
+}
+
+async function cargarRepaso() {
+
+    const token = localStorage.getItem("token");
+
+    const resTemas = await fetch("/api/temas", {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    const dataTemas = await resTemas.json();
+
+    const select = document.getElementById("filtroTema");
+
+    dataTemas.temas.forEach(t => {
+
+        const option = document.createElement("option");
+
+        option.value = t.tema;
+
+        option.textContent = t.tema;
+
+        select.appendChild(option);
+    });
+
+    async function cargarLista() {
+
+        const tema = select.value;
+
+        const res = await fetch(`/api/repaso?tema=${tema}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        const data = await res.json();
+
+        const lista = document.getElementById("listaRepaso");
+
+        lista.innerHTML = "";
+
+        data.niveles.forEach(n => {
+
+            const div = document.createElement("div");
+
+            div.innerHTML = `
+                <h3>${n.tema}</h3>
+                <p>Mundo ${n.mundo} - Nivel ${n.orden_nivel}</p>
+                <button>Repasar</button>
+            `;
+
+            div.querySelector("button").onclick = () => {
+                seleccionarNivelRepaso(
+                    n.mundo,
+                    n.orden_nivel
+                );
+            };
+
+            lista.appendChild(div);
+        });
+    }
+
+    select.addEventListener("change", cargarLista);
+
+    cargarLista();
 }
 
 const crearProfesorForm = document.getElementById("crearProfesorForm");
@@ -659,6 +756,10 @@ function irAventura() {
     window.location.href = "/mundos"
 }
 
+function irRepaso() {
+    window.location.href = "/repaso"
+}
+
 async function puedeAccederAMundo(mundo) {
     const token = localStorage.getItem("token");
 
@@ -684,6 +785,8 @@ async function seleccionarMundo(mundo) {
 }
 
 async function seleccionarNivel(nivel) {
+    localStorage.removeItem("modoRepaso");
+    
     const mundo = localStorage.getItem("mundoSeleccionado");
     const token = localStorage.getItem("token");
 
@@ -701,6 +804,13 @@ async function seleccionarNivel(nivel) {
     
     localStorage.setItem("nivelSeleccionado", nivel);
     window.location.href = "/juego"
+}
+
+function seleccionarNivelRepaso(mundo, nivel) {
+    localStorage.setItem("mundoSeleccionado", mundo);
+    localStorage.setItem("nivelSeleccionado", nivel);
+    localStorage.setItem("modoRepaso", "true");
+    window.location.href = "/juego";
 }
 
 function mostrarHint() {
@@ -784,6 +894,13 @@ async function cargarEstadoNiveles() {
 }
 
 function regresarANiveles() {
+    const modoRepaso = localStorage.getItem("modoRepaso") === "true";
+    
+    if (modoRepaso) {
+        window.location.href = "/repaso";
+        return;
+    }
+    
     const mundo = localStorage.getItem("mundoSeleccionado");
 
     if (!mundo) {
@@ -1197,6 +1314,11 @@ async function actualizarPerfil(campo) {
     }
 }
 
+function reproducirSonido(audio) {
+    audio.currentTime = 0;
+    audio.play();
+}
+
 if (window.location.pathname === "/tienda") {
     cargarTienda();
     cargarAvatar();
@@ -1208,6 +1330,10 @@ if (window.location.pathname === "/home") {
 
 if (window.location.pathname === "/perfil") {
     cargarMisGrupos();
+}
+
+if (window.location.pathname === "/repaso") {
+    cargarRepaso();
 }
 
 if (window.location.pathname === "/dashboard") {

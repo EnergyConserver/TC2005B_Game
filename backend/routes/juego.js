@@ -296,4 +296,77 @@ router.get("/progreso-mundo", verifyToken, async (req, res) => {
     }
 });
 
+router.get("/repaso", verifyToken, async (req, res) => {
+    const { tema } = req.query;
+
+    let conn;
+
+    try {
+        conn = await pool.getConnection();
+
+        let query = `
+            SELECT
+                n.id_nivel,
+                n.orden_nivel,
+                n.tema,
+                m.orden AS mundo,
+                n.pregunta
+            FROM progreso_usuario pu
+            JOIN niveles n ON pu.id_nivel = n.id_nivel
+            JOIN mundos m ON n.id_mundo = m.id_mundo
+            WHERE pu.id_usuario = ?
+            AND pu.completado = 1
+        `;
+
+        const params = [req.user.id];
+
+        if (tema && tema !== "todos") {
+            query += ` AND n.tema = ?`;
+            params.push(tema);
+        }
+
+        query += ` ORDER BY n.tema, m.orden, n.orden_nivel`;
+
+        const niveles = await conn.query(query, params);
+
+        res.json({
+            status: "success",
+            niveles
+        });
+
+    } catch (err) {
+        console.error(err);
+
+        res.status(500).json({
+            status: "error"
+        });
+
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+router.get("/temas", verifyToken, async (req, res) => {
+    let conn;
+
+    try {
+        conn = await pool.getConnection();
+
+        const temas = await conn.query(`
+            SELECT DISTINCT tema
+            FROM niveles
+            WHERE tema IS NOT NULL
+            ORDER BY tema
+        `);
+
+        res.json({
+            status: "success",
+            temas
+        });
+
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
 module.exports = router;
