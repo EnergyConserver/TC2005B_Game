@@ -24,6 +24,14 @@
   background-image: url(images/islasFondo.jpeg);
 }
 
+.nivelesFondo {
+  background-image: url(images/nivelesFondo.jpeg);
+}
+
+.perfilFondo {
+  background-image: url(images/perfil_fondo.jpeg);
+}
+
 .container_login {
   display: flex;
   flex-direction: column;
@@ -420,6 +428,16 @@
   transform: scale(1.3);
 }
 
+.nivel-repaso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nivel-repaso p {
+  margin: 0;
+}
+
 .avatar-btn {
   position: relative;
   width: 80px;
@@ -491,8 +509,17 @@
   cursor: pointer;
 }
 
-.isla {
+.isla.bloqueado {
+  background-image: url("images/isla_bloqueada.png");
+  opacity: 0.5;
+}
+
+.isla.disponible {
   background-image: url("images/isla_nocompletada.png");
+}
+
+.isla.completado {
+  background-image: url("images/isla_completada.png");
 }
 
 .nivel.bloqueado {
@@ -524,7 +551,17 @@
 
 .button_isla2 {
   top: 60%;
-  left: 70%;
+  left: 40%;
+}
+
+.button_isla3 {
+  top: 30%;
+  left: 57%;
+}
+
+.button_isla4 {
+  top: 60%;
+  left: 75%;
 }
 
 .button_nivel1 {
@@ -549,6 +586,8 @@
 
 .button_isla1,
 .button_isla2,
+.button_isla3,
+.button_isla4,
 .button_nivel1,
 .button_nivel2,
 .button_nivel3,
@@ -558,6 +597,8 @@
 
 .button_isla1:hover,
 .button_isla2:hover,
+.button_isla3:hover,
+.button_isla4:hover,
 .button_nivel1:hover,
 .button_nivel2:hover,
 .button_nivel3:hover,

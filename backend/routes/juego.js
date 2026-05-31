@@ -39,6 +39,7 @@ router.post("/jugar", verifyToken, async (req, res) => {
 
         const acierto = (x === meta.meta_x && y === meta.meta_y);
 
+        let monedasGanadas = 0;
         if (acierto) {
             let puntos = 100;
 
@@ -76,17 +77,19 @@ router.post("/jugar", verifyToken, async (req, res) => {
             }
 
             if (primeraVez) {
+                monedasGanadas = 100;
                 await conn.query(`
                     UPDATE usuarios
-                    SET monedas = monedas + 100
+                    SET monedas = monedas + ?
                     WHERE id_usuario = ?
-                `, [req.user.id]);
+                `, [monedasGanadas, req.user.id]);
             } else {
+                monedasGanadas = 10;
                 await conn.query(`
                     UPDATE usuarios
-                    SET monedas = monedas + 10
+                    SET monedas = monedas + ?
                     WHERE id_usuario = ?
-                `, [req.user.id]);
+                `, [monedasGanadas, req.user.id]);
             }
 
             await conn.query(`
@@ -103,7 +106,8 @@ router.post("/jugar", verifyToken, async (req, res) => {
 
         res.json({
             status: "success",
-            resultado: acierto ? "acierto" : "fallo"
+            resultado: acierto ? "acierto" : "fallo",
+            monedasGanadas: acierto ? monedasGanadas : 0
         });
 
     } catch (err) {
@@ -186,6 +190,7 @@ router.get("/nivel", verifyToken, async (req, res) => {
                 n.pregunta,
                 n.hint,
                 n.tipo,
+                n.tema,
                 n.id_nivel
             FROM niveles n
             JOIN mundos m ON n.id_mundo = m.id_mundo
@@ -203,7 +208,7 @@ router.get("/nivel", verifyToken, async (req, res) => {
 
         if (rows[0].tipo === "vectores") {
             vectores = await conn.query(`
-                SELECT dx, dy, orden
+                SELECT dx, dy, orden, escala
                 FROM vectores_nivel
                 WHERE id_nivel = ?
                 ORDER BY orden
@@ -214,11 +219,29 @@ router.get("/nivel", verifyToken, async (req, res) => {
 
         // Si es nivel de vectores, construir pregunta dinámica
         if (rows[0].tipo === "vectores") {
-            const textoVectores = vectores
-            .map(v => `${v.dx}i, ${v.dy}j`)
-            .join("\n↓\n");
+            let textoVectores = "";
 
-            pregunta = `Sigue los vectores en orden: \n\n${textoVectores}`;
+            if (rows[0].tema === "resta") {
+                textoVectores = vectores
+                .map(v => `(${v.dx}i, ${v.dy}j)`)
+                .join(" - ");
+            } else if (rows[0].tema === "suma") {
+                textoVectores = vectores
+                .map(v => `${v.dx}i, ${v.dy}j`)
+                .join("\n↓\n");
+            } else {
+                textoVectores = vectores
+                .map(v => `${v.escala}(${v.dx}i, ${v.dy}j)`)
+                .join("\n↓\n");
+            }
+
+            if (rows[0].tema === "suma") {
+                pregunta = `Suma y sigue los siguiente vectores en orden: \n\n${textoVectores}`;
+            } else if (rows[0].tema === "resta") {
+                pregunta = `Haz la siguiente resta y sigue el vector resultante: \n\n${textoVectores}`;
+            } else {
+                pregunta = `Aplica la escala y sigue los vectores en orden: \n\n${textoVectores}`;
+            }
         }
 
         res.json({
@@ -291,6 +314,67 @@ router.get("/progreso-mundo", verifyToken, async (req, res) => {
 
     } catch (err) {
         res.status(500).json({ status: "error" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+router.get("/progreso-mundos", verifyToken, async (req, res) => {
+    let conn;
+
+    try {
+        conn = await pool.getConnection();
+
+        const mundos = await conn.query(`
+            SELECT id_mundo, orden
+            FROM mundos
+            ORDER BY orden
+        `);
+
+        const resultado = [];
+
+        for (const mundo of mundos) {
+
+            const totalNiveles = await conn.query(`
+                SELECT COUNT(*) AS total
+                FROM niveles
+                WHERE id_mundo = ?
+            `, [mundo.id_mundo]);
+
+            const completados = await conn.query(`
+                SELECT COUNT(*) AS total
+                FROM progreso_usuario pu
+                JOIN niveles n ON pu.id_nivel = n.id_nivel
+                WHERE pu.id_usuario = ?
+                AND pu.completado = 1
+                AND n.id_mundo = ?
+            `, [req.user.id, mundo.id_mundo]);
+
+            let estado = "disponible";
+
+            if (completados[0].total === totalNiveles[0].total) {
+                estado = "completado";
+            }
+
+            resultado.push({
+                orden: mundo.orden,
+                estado
+            });
+        }
+
+        res.json({
+            status: "success",
+            mundos: resultado
+        });
+
+    } catch (err) {
+        console.error(err);
+
+        res.status(500).json({
+            status: "error",
+            message: "Error del servidor"
+        });
+
     } finally {
         if (conn) conn.release();
     }

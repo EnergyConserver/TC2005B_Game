@@ -144,6 +144,7 @@ let jugadorMoviendose = false;
 let vectores = [];
 let pasoActual = 0;
 let tipoNivel = "punto";
+let dataNivel = null;
 let modoRepaso = false;
 if(canvas) {
     modoRepaso = localStorage.getItem("modoRepaso") === "true";
@@ -325,6 +326,8 @@ if(canvas) {
         pasoActual = 0;
 
         if (data.status === "success") {
+            dataNivel = data.nivel
+            
             puntoCorrecto = {
                 x: data.nivel.meta_x,
                 y: data.nivel.meta_y
@@ -429,7 +432,7 @@ if(canvas) {
             const data = await res.json();
 
             if (data.resultado === "acierto") {
-                terminarNivel();
+                terminarNivel(data.monedasGanadas);
             } else {
                 fallo();
             }
@@ -438,20 +441,57 @@ if(canvas) {
 
         const vector = vectores[pasoActual];
 
-        const esperado = {
+        if (dataNivel.tema == "suma") {
+            const esperado = {
             x: puntoInicio.x + vectores
                 .slice(0, pasoActual + 1)
                 .reduce((sum, v) => sum + v.dx, 0),
             y: puntoInicio.y + vectores
                 .slice(0, pasoActual + 1)
                 .reduce((sum, v) => sum + v.dy, 0)
-        };
+            };
 
-        if (destino.x === esperado.x && destino.y === esperado.y) {
-            pasoActual++;
+            if (destino.x === esperado.x && destino.y === esperado.y) {
+                pasoActual++;
 
-            if (pasoActual === vectores.length) {
-                await fetch("/api/jugar", {
+                if (pasoActual === vectores.length) {
+                    const res = await fetch("/api/jugar", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            x: destino.x,
+                            y: destino.y,
+                            mundo: Number(mundo),
+                            nivel: Number(nivel),
+                            intentos,
+                            usoHint
+                        })
+                    });
+                    const data = await res.json();
+                    terminarNivel(data.monedasGanadas);
+                }
+
+            } else {
+                fallo();
+            }   
+        } else if (dataNivel.tema === "resta") {
+            
+            let esperadoX = vectores[0].dx;
+            let esperadoY = vectores[0].dy;
+
+            for (let i = 1; i < vectores.length; i++) {
+                esperadoX -= vectores[i].dx;
+                esperadoY -= vectores[i].dy;
+            }
+
+            esperadoX += puntoInicio.x;
+            esperadoY += puntoInicio.y;
+
+            if (destino.x === esperadoX && destino.y === esperadoY) {
+                const res = await fetch("/api/jugar", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -466,22 +506,58 @@ if(canvas) {
                         usoHint
                     })
                 });
-                terminarNivel();
+                const data = await res.json();
+                terminarNivel(data.monedasGanadas);
+            } else {
+                fallo();
             }
+        } else if (dataNivel.tema === "escala") {
+            const esperado = {
+                x: puntoInicio.x + vectores
+                    .slice(0, pasoActual + 1)
+                    .reduce((sum, v) => sum + (v.dx * v.escala), 0),
 
-        } else {
-            fallo();
+                y: puntoInicio.y + vectores
+                    .slice(0, pasoActual + 1)
+                    .reduce((sum, v) => sum + (v.dy * v.escala), 0)
+            };
+
+            if (destino.x === esperado.x && destino.y === esperado.y) {
+                pasoActual++;
+
+                if (pasoActual === vectores.length) {
+                    const res = await fetch("/api/jugar", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            x: destino.x,
+                            y: destino.y,
+                            mundo: Number(mundo),
+                            nivel: Number(nivel),
+                            intentos,
+                            usoHint
+                        })
+                    });
+                    const data = await res.json();
+                    terminarNivel(data.monedasGanadas);
+                }
+            } else {
+                fallo();
+            }
         }
     }
 
-    function terminarNivel() {
+    function terminarNivel(monedasGanadas = 0) {
         jugadorMoviendose = true;
 
         sonidoMoverse.pause();
         sonidoMoverse.currentTime = 0;
         reproducirSonido(sonidoResCorrecta);
         
-        alert("¡Correcto! 🎉");
+        alert(`¡Correcto! 🎉\nGanaste ${monedasGanadas} monedas 💰`);
 
         if (modoRepaso) {
             localStorage.removeItem("modoRepaso");
@@ -612,15 +688,25 @@ async function cargarRepaso() {
         const lista = document.getElementById("listaRepaso");
 
         lista.innerHTML = "";
+        let temaAnterior = null;
 
         data.niveles.forEach(n => {
 
             const div = document.createElement("div");
 
+            let encabezadoTema = "";
+
+            if (n.tema !== temaAnterior) {
+                encabezadoTema = `<h3>${n.tema}</h3>`;
+                temaAnterior = n.tema;
+            }
+
             div.innerHTML = `
-                <h3>${n.tema}</h3>
-                <p>Mundo ${n.mundo} - Nivel ${n.orden_nivel}</p>
-                <button>Repasar</button>
+                ${encabezadoTema}
+                <div class="nivel-repaso">
+                    <p>Mundo ${n.mundo} - Nivel ${n.orden_nivel}</p>
+                    <button>Repasar</button>
+                </div>
             `;
 
             div.querySelector("button").onclick = () => {
@@ -865,6 +951,8 @@ async function cargarEstadoNiveles() {
     const data = await res.json();
     const niveles = data.niveles;
 
+    console.log(niveles);
+
     niveles.forEach((nivel, index) => {
         const div = document.querySelector(`.button_nivel${nivel.orden_nivel}`);
 
@@ -889,6 +977,51 @@ async function cargarEstadoNiveles() {
                 return;
             }
             seleccionarNivel(nivel.orden_nivel);
+        };
+    });
+}
+
+async function cargarEstadoMundos() {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("/api/progreso-mundos", {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    const data = await res.json();
+
+    const mundos = data.mundos;
+
+    mundos.forEach((mundo, index) => {
+
+        const div = document.querySelector(`.button_isla${mundo.orden}`);
+
+        if (!div) return;
+
+        div.classList.remove("bloqueado", "disponible", "completado");
+
+        if (index > 0 && mundos[index - 1].estado !== "completado") {
+            div.classList.add("bloqueado");
+        }
+        else if (mundo.estado === "completado") {
+            div.classList.add("completado");
+        }
+        else {
+            div.classList.add("disponible");
+        }
+
+        const btn = div.querySelector("button");
+
+        btn.onclick = () => {
+
+            if (div.classList.contains("bloqueado")) {
+                alert("Debes completar la isla anterior");
+                return;
+            }
+
+            seleccionarMundo(mundo.orden);
         };
     });
 }
@@ -1348,6 +1481,10 @@ if (window.location.pathname === "/dashboard") {
 
 if (window.location.pathname === "/niveles") {
     cargarEstadoNiveles();
+}
+
+if (window.location.pathname === "/mundos") {
+    cargarEstadoMundos();
 }
 
 function regresarHome() {
