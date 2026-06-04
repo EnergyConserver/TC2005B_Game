@@ -181,6 +181,49 @@ router.post("/admin/crear-profesor", verifyToken, verifyRole("admin"), async (re
     }
 });
 
+router.post("/admin/crear-admin", verifyToken, verifyRole("admin"), async (req, res) => {
+        const { email, password } = req.body;
+
+        let conn;
+        try {
+            conn = await pool.getConnection();
+
+            const existing = await conn.query(
+                "SELECT * FROM usuarios WHERE correo = ?",
+                [email]
+            );
+
+            if (existing.length > 0) {
+                return res.json({
+                    status: "error",
+                    message: "El usuario ya existe"
+                });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            await conn.query(
+                "INSERT INTO usuarios (correo, contraseña, tipo_usuario) VALUES (?, ?, 'admin')",
+                [email, hashedPassword]
+            );
+
+            res.json({
+                status: "success",
+                message: "Admin creado"
+            });
+
+        } catch (err) {
+            console.error(err);
+            res.json({
+                status: "error",
+                message: "Error del servidor"
+            });
+        } finally {
+            if (conn) conn.release();
+        }
+    }
+);
+
 router.put("/usuario", verifyToken, async (req, res) => {
     const { nombre, correo, password } = req.body;
 

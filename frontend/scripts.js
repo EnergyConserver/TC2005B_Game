@@ -725,6 +725,45 @@ async function cargarRepaso() {
     cargarLista();
 }
 
+const crearAdminForm = document.getElementById("crearAdminForm");
+
+if (crearAdminForm) {
+    crearAdminForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = e.target.email.value;
+        const password = e.target.password.value;
+        const mensaje = document.getElementById("mensajeAdmin2");
+
+        const token = localStorage.getItem("token");
+
+        try {
+            const res = await fetch("/api/admin/crear-admin", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (data.status === "success") {
+                mensaje.style.color = "green";
+                mensaje.innerText = "Admin creado correctamente";
+                e.target.reset();
+            } else {
+                mensaje.style.color = "red";
+                mensaje.innerText = data.message;
+            }
+
+        } catch (err) {
+            mensaje.innerText = "Error del servidor";
+        }
+    });
+}
+
 const crearProfesorForm = document.getElementById("crearProfesorForm");
 
 if (crearProfesorForm) {
