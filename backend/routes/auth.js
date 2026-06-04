@@ -224,6 +224,64 @@ router.post("/admin/crear-admin", verifyToken, verifyRole("admin"), async (req, 
     }
 );
 
+router.put("/admin/cambiar-password", verifyToken, verifyRole("admin"), async (req, res) => {
+        const { email, password } = req.body;
+
+        if (!email) {
+            return res.json({
+                status: "error",
+                message: "Email requerido"
+            });
+        }
+
+        if (!password || password.length < 6) {
+            return res.json({
+                status: "error",
+                message: "La contraseña debe tener al menos 6 caracteres"
+            });
+        }
+
+        let conn;
+        try {
+            conn = await pool.getConnection();
+
+            // verificar si existe el usuario
+            const rows = await conn.query(
+                "SELECT id_usuario FROM usuarios WHERE correo = ?",
+                [email]
+            );
+
+            if (rows.length === 0) {
+                return res.json({
+                    status: "error",
+                    message: "Usuario no encontrado"
+                });
+            }
+
+            const hashed = await bcrypt.hash(password, 10);
+
+            await conn.query(
+                "UPDATE usuarios SET contraseña = ? WHERE correo = ?",
+                [hashed, email]
+            );
+
+            res.json({
+                status: "success",
+                message: "Contraseña actualizada"
+            });
+
+        } catch (err) {
+            console.error(err);
+            res.json({
+                status: "error",
+                message: "Error del servidor"
+            });
+        } finally {
+            if (conn) conn.release();
+        }
+    }
+);
+
 router.put("/usuario", verifyToken, async (req, res) => {
     const { nombre, correo, password } = req.body;
 
