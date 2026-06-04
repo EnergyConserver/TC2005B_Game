@@ -803,6 +803,40 @@ if (crearProfesorForm) {
     });
 }
 
+const cambiarPasswordForm = document.getElementById("cambiarPasswordForm");
+
+if (cambiarPasswordForm) {
+    cambiarPasswordForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = e.target.email.value;
+        const password = e.target.password.value;
+        const mensaje = document.getElementById("mensajeCambio");
+
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("/api/admin/cambiar-password", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        mensaje.innerText = data.message;
+
+        if (data.status === "success") {
+            mensaje.style.color = "green";
+            e.target.reset();
+        } else {
+            mensaje.style.color = "red";
+        }
+    });
+}
+
 async function verificarAcceso(token) {
     try {
         const res = await fetch("/api/verification", {
