@@ -30,7 +30,7 @@ CREATE TABLE `cosmeticos` (
   `nombre` varchar(50) DEFAULT NULL,
   `imagen` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id_cosmetico`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -64,7 +64,10 @@ INSERT INTO `cosmeticos` VALUES
 (21,'cabeza',20,'Lentes Morados','lentes_morados.png'),
 (22,'cabeza',30,'Lentes Flor','lentes_flor.png'),
 (23,'cabeza',30,'Mascara Rosa','mascara_rosa.png'),
-(24,'cabeza',30,'Mascara Buceo','mascara_buceo.png');
+(24,'cabeza',30,'Mascara Buceo','mascara_buceo.png'),
+(25,'cabeza',40,'Sombrero de bucanero','bucanero_cabeza.png'),
+(26,'cuerpo',90,'Camisa de bucanero','bucanero_camisa.png'),
+(27,'pies',70,'Botas de bucanero','bucanero_pies.png');
 /*!40000 ALTER TABLE `cosmeticos` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -95,38 +98,6 @@ CREATE TABLE `cosmeticos_usuario` (
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `cosmeticos_usuario` WRITE;
 /*!40000 ALTER TABLE `cosmeticos_usuario` DISABLE KEYS */;
-INSERT INTO `cosmeticos_usuario` VALUES
-(6,1,1),
-(6,2,0),
-(6,3,0),
-(6,4,1),
-(10,1,1),
-(10,2,1),
-(11,1,1),
-(11,2,1),
-(13,1,1),
-(13,2,0),
-(13,3,0),
-(13,4,1),
-(15,1,0),
-(15,2,0),
-(15,3,0),
-(15,4,0),
-(15,5,0),
-(15,6,0),
-(15,7,0),
-(15,8,0),
-(15,9,0),
-(15,10,0),
-(15,11,0),
-(15,12,0),
-(15,13,0),
-(15,14,1),
-(16,1,1),
-(16,2,1),
-(18,5,1),
-(18,10,1),
-(18,17,1);
 /*!40000 ALTER TABLE `cosmeticos_usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -147,7 +118,7 @@ CREATE TABLE `grupos` (
   PRIMARY KEY (`id_grupo`),
   UNIQUE KEY `codigo_acceso` (`codigo_acceso`),
   KEY `id_profesor` (`id_profesor`),
-  CONSTRAINT `grupos_ibfk_1` FOREIGN KEY (`id_profesor`) REFERENCES `usuarios` (`id_usuario`)
+  CONSTRAINT `grupos_ibfk_1` FOREIGN KEY (`id_profesor`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -158,8 +129,6 @@ CREATE TABLE `grupos` (
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `grupos` WRITE;
 /*!40000 ALTER TABLE `grupos` DISABLE KEYS */;
-INSERT INTO `grupos` VALUES
-(3,'Prueba1','N4ASKZ',5);
 /*!40000 ALTER TABLE `grupos` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -189,9 +158,6 @@ CREATE TABLE `grupos_usuario` (
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `grupos_usuario` WRITE;
 /*!40000 ALTER TABLE `grupos_usuario` DISABLE KEYS */;
-INSERT INTO `grupos_usuario` VALUES
-(10,3),
-(11,3);
 /*!40000 ALTER TABLE `grupos_usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -312,71 +278,6 @@ CREATE TABLE `progreso_usuario` (
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `progreso_usuario` WRITE;
 /*!40000 ALTER TABLE `progreso_usuario` DISABLE KEYS */;
-INSERT INTO `progreso_usuario` VALUES
-(10,4,0,1,150,1),
-(10,5,0,1,150,1),
-(10,6,0,1,150,1),
-(10,7,0,1,150,1),
-(10,12,0,1,80,3),
-(10,13,0,1,90,2),
-(10,14,0,1,80,3),
-(10,15,0,1,70,4),
-(12,4,0,1,150,1),
-(12,5,0,1,150,1),
-(12,6,0,1,150,1),
-(12,7,0,1,150,1),
-(12,12,0,1,80,3),
-(12,13,0,1,90,2),
-(12,14,0,1,80,3),
-(12,15,0,1,70,4),
-(13,4,0,1,150,1),
-(13,5,0,1,150,1),
-(13,6,0,1,150,1),
-(13,7,0,1,150,1),
-(14,4,0,1,150,1),
-(14,5,0,1,150,1),
-(14,6,0,1,150,1),
-(14,7,0,1,150,1),
-(15,4,0,1,150,1),
-(15,5,0,1,150,1),
-(15,6,0,1,150,1),
-(15,7,0,1,150,1),
-(15,12,0,1,60,5),
-(15,13,0,1,90,2),
-(15,14,0,1,80,3),
-(15,15,0,1,40,7),
-(16,4,0,1,150,1),
-(16,5,0,1,150,1),
-(16,6,1,1,150,1),
-(16,7,0,1,150,1),
-(16,12,1,1,90,2),
-(16,13,0,1,90,2),
-(16,14,0,1,40,7),
-(17,4,0,1,150,1),
-(17,5,0,1,150,1),
-(17,6,0,1,150,1),
-(17,7,0,1,150,1),
-(17,12,0,1,90,2),
-(17,13,0,1,80,3),
-(17,14,0,1,80,3),
-(17,15,0,1,70,4),
-(17,21,0,1,150,1),
-(17,22,0,1,150,1),
-(17,23,0,1,150,1),
-(17,24,0,1,150,1),
-(17,25,0,1,90,2),
-(17,26,0,1,90,2),
-(17,28,0,1,80,3),
-(17,29,0,1,80,3),
-(18,4,0,1,150,1),
-(18,5,0,1,150,1),
-(18,6,0,1,150,1),
-(18,7,0,1,150,1),
-(18,12,0,1,90,2),
-(18,13,0,1,90,2),
-(18,14,0,1,80,3),
-(18,15,0,1,60,5),
-(18,21,0,1,150,1);
 /*!40000 ALTER TABLE `progreso_usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -399,7 +300,7 @@ CREATE TABLE `usuarios` (
   `monedas` int(11) DEFAULT 0,
   PRIMARY KEY (`id_usuario`),
   UNIQUE KEY `correo` (`correo`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -409,14 +310,6 @@ CREATE TABLE `usuarios` (
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES
-(4,NULL,'admin@gmail.com','$2b$10$A6fEnr4NwR1geXrsbAtDuO98PtQeDtQyw7WBQjMYFr2Oay.qwUWyy','2026-04-25 19:12:34','admin',0),
-(5,NULL,'profesor@gmail.com','$2b$10$LIKm9q.fioHH/QuMvQqukOamE5mvQtk7/VZBne2hOJL01Lp2rJqKq','2026-04-25 19:31:25','profesor',0),
-(6,NULL,'alumno@gmail.com','$2b$10$7c8nFEgYsG8sPwsSfG58buarEjsqR6d6/Tb2SJTBerNTecJlU6b3S','2026-04-25 19:36:05','alumno',2180),
-(15,'Test3','test3@gmail.com','$2b$10$Kt0bqS5.FaRmmwiBORXEfuVbXMvD8v4weMV/JwmY1ZUklefpCJtQS','2026-05-15 18:20:57','alumno',200),
-(16,'Eduardo','edu@gmail.com','$2b$10$goMBcAuUXWTLW8ez.2R4V.v37WGMFnpIAn3k4fxgyl5v/koNxXEUm','2026-05-24 20:19:05','alumno',760),
-(17,'Lalo','lalo@gmail.com','$2b$10$gnaksPjyQX/qymkKIPCDwOQ6jHp9xT8aH23KH0aKsQo/U6e8mRhi.','2026-05-26 18:00:08','alumno',1950),
-(18,'Lalo2','lalo2@gmail.com','$2b$10$T5V7m.nuXeAMy/50/RVaT.8lK4mZWptKPeN28zs8AWpI3o/YEfmrW','2026-05-28 22:36:07','alumno',820);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -495,4 +388,4 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-05-30 22:02:22
+-- Dump completed on 2026-06-10 13:40:30
