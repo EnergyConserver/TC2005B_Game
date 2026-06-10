@@ -32,6 +32,10 @@
   background-image: url(images/perfil_fondo.jpeg);
 }
 
+.fondoPrincipal {
+  background-image: url(images/fondo.jpeg);
+}
+
 .container_login {
   display: flex;
   flex-direction: column;
@@ -237,9 +241,11 @@
   font-family: Arial;
 }
 
-.canvas_grid {
+#canvas_grid {
   border: 1px solid black;
   cursor: crosshair;
+  background-color: white;
+  border: 1px solid black;
 }
 
 .game-container {

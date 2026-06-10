@@ -1155,7 +1155,9 @@ function renderTienda() {
 
     let filtrados = cosmeticosGlobal;
 
-    if (filtroActual !== "todos") {
+    if (filtroActual === "comprados") {
+        filtrados = cosmeticosGlobal.filter(c => c.comprado);
+    } else if (filtroActual !== "todos") {
         filtrados = cosmeticosGlobal.filter(c => c.tipo_cosmetico === filtroActual);
     }
 
