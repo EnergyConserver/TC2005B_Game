@@ -33,3 +33,7 @@ npm install
 ```
 node server.js
 ```
+
+Admin de prueba
+Correo: admin@gmail.com
+Contraseña 123456
